@@ -66,6 +66,69 @@
                         <div class="json-container hidden"></div>
                     </div>
                 </div>
+            <!-- Architecture Card -->
+            <div class="card" id="card-arch">
+                <div class="card-content">
+                    <h2>🏛️ Architecture Engine</h2>
+                    <p>Floorplan Layout Optimization</p>
+                    <button onclick="generateArch(this)">Optimize Layout</button>
+                    <div class="result-area">
+                        <div class="loader"></div>
+                        <div class="svg-container hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UI Layout Card -->
+            <div class="card" id="card-ui">
+                <div class="card-content">
+                    <h2>🖥️ UI Layout Engine</h2>
+                    <p>Flexbox Constraint Gen</p>
+                    <button onclick="generateUi(this)">Generate Layout</button>
+                    <div class="result-area">
+                        <div class="loader"></div>
+                        <div class="json-container hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PCB Routing Card -->
+            <div class="card" id="card-pcb">
+                <div class="card-content">
+                    <h2>🔌 PCB Routing Engine</h2>
+                    <p>Manhattan Distance Router</p>
+                    <button onclick="generatePcb(this)">Route Traces</button>
+                    <div class="result-area">
+                        <div class="loader"></div>
+                        <div class="svg-container hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typography Card -->
+            <div class="card" id="card-typo">
+                <div class="card-content">
+                    <h2>🔤 Typography Engine</h2>
+                    <p>Bezier Curve Glyph Gen</p>
+                    <button onclick="generateTypo(this)">Generate Glyph</button>
+                    <div class="result-area">
+                        <div class="loader"></div>
+                        <div class="svg-container hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Animation Card -->
+            <div class="card" id="card-anim">
+                <div class="card-content">
+                    <h2>🎬 Animation Engine</h2>
+                    <p>Procedural Easing Curves</p>
+                    <button onclick="generateAnim(this)">Optimize Transition</button>
+                    <div class="result-area">
+                        <div class="loader"></div>
+                        <div class="json-container hidden"></div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>

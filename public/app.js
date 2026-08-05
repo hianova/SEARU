@@ -55,3 +55,23 @@ function generateMechanics(btn) {
 function generateMaterials(btn) {
     handleRequest(btn, '/api/materials/match', 'json', '.json-container');
 }
+
+function generateArch(btn) {
+    handleRequest(btn, '/api/architecture/floorplan', 'svg', '.svg-container');
+}
+
+function generateUi(btn) {
+    handleRequest(btn, '/api/ui_layout/optimize', 'json', '.json-container');
+}
+
+function generatePcb(btn) {
+    handleRequest(btn, '/api/pcb_routing/route', 'svg', '.svg-container');
+}
+
+function generateTypo(btn) {
+    handleRequest(btn, '/api/typography/glyph', 'svg', '.svg-container');
+}
+
+function generateAnim(btn) {
+    handleRequest(btn, '/api/procedural_animation/curve', 'json', '.json-container');
+}

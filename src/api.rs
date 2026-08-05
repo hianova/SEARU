@@ -11,14 +11,15 @@ use crate::mechanics::statics::Truss;
 use crate::materials::matcher::MaterialMatcher;
 use crate::materials::pbr::PbrMaterial;
 
-/// SEARU Core API
-/// A unified interface for Web UIs or external applications to interact with the SEARU engine.
+use crate::architecture::{FloorPlanner, Room};
+use crate::ui_layout::{UiOptimizer, LayoutNode};
+use crate::pcb_routing::{PcbRouter, Trace};
+use crate::typography::{TypographyGenerator, Glyph};
+use crate::procedural_animation::{AnimationOptimizer, AnimationCurve};
+
 pub struct SearuApi;
 
 impl SearuApi {
-    // ---------------------------------------------------------
-    // Music Domain
-    // ---------------------------------------------------------
     pub fn generate_noise(color: NoiseColor, seconds: f32, sample_rate: u32) -> Vec<f32> {
         NoiseGenerator::generate(color, seconds, sample_rate)
     }
@@ -47,24 +48,21 @@ impl SearuApi {
         full_audio_buffer
     }
     
-    // ---------------------------------------------------------
-    // Visual Domain
-    // ---------------------------------------------------------
     pub fn generate_visual_art(num_shapes: usize, points_per_shape: usize) -> Vec<Shape> {
         VisualComposer::generate_art(num_shapes, points_per_shape)
     }
     
-    // ---------------------------------------------------------
-    // Mechanics Domain
-    // ---------------------------------------------------------
     pub fn optimize_mechanics_truss() -> Truss {
         MechanicsOptimizer::optimize_truss()
     }
     
-    // ---------------------------------------------------------
-    // Materials Domain
-    // ---------------------------------------------------------
     pub fn match_pbr_material(target_front_rgb: [f64; 3], target_edge_rgb: [f64; 3]) -> PbrMaterial {
         MaterialMatcher::match_material(target_front_rgb, target_edge_rgb)
     }
+
+    pub fn optimize_floorplan() -> Vec<Room> { FloorPlanner::optimize_layout() }
+    pub fn optimize_ui_layout() -> Vec<LayoutNode> { UiOptimizer::optimize() }
+    pub fn route_pcb() -> Vec<Trace> { PcbRouter::route() }
+    pub fn generate_glyph() -> Glyph { TypographyGenerator::generate_glyph() }
+    pub fn optimize_animation_transition() -> AnimationCurve { AnimationOptimizer::optimize_transition() }
 }
