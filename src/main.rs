@@ -1,14 +1,81 @@
+mod api;
 mod science;
 mod music;
+mod visual;
+mod mechanics;
+mod materials;
 
-use music::composer::EvolutionaryComposer;
+use axum::{
+    routing::get,
+    Router,
+    response::IntoResponse,
+    http::header,
+    Json
+};
+use serde::Serialize;
+use tower_http::services::ServeDir;
+use tower_http::cors::CorsLayer;
+use std::net::SocketAddr;
 
-fn main() {
-    println!("🎹 Welcome to SEARU: The Algorithmic Music Suite");
+use api::SearuApi;
+use music::dsp::exporter::AudioExporter;
+use visual::exporter::SvgExporter;
+use mechanics::exporter::TrussExporter;
+
+#[tokio::main]
+async fn main() {
+    println!("🚀 Starting SEARU Web UI Server on http://localhost:3000");
+
+    let app = Router::new()
+        .nest_service("/", ServeDir::new("public"))
+        .route("/api/music/bach", get(api_music_bach))
+        .route("/api/visual/art", get(api_visual_art))
+        .route("/api/mechanics/truss", get(api_mechanics_truss))
+        .route("/api/materials/match", get(api_materials_match))
+        .layer(CorsLayer::permissive());
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+}
+
+async fn api_music_bach() -> impl IntoResponse {
+    let sample_rate = 44100;
+    let bach_audio_buffer = SearuApi::generate_bach_progression(
+        &[60.0, 64.0, 67.0], 4, 1.2, sample_rate
+    );
+    let bytes = AudioExporter::encode_to_wav_bytes(&bach_audio_buffer, sample_rate).unwrap();
     
-    // We start with C4 (Middle C) which is MIDI note 60.
-    // The EvolutionaryComposer will use TheCrucible (Monte Carlo Annealing)
-    // to search for two other notes that form the most mathematically 
-    // consonant triad based on Plomp-Levelt psychoacoustic dissonance curves.
-    EvolutionaryComposer::discover_pure_triad(60.0);
+    ([(header::CONTENT_TYPE, "audio/wav")], bytes)
+}
+
+async fn api_visual_art() -> impl IntoResponse {
+    let shapes = SearuApi::generate_visual_art(10, 5);
+    let svg_str = SvgExporter::to_svg_string(&shapes);
+    ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
+}
+
+async fn api_mechanics_truss() -> impl IntoResponse {
+    let truss = SearuApi::optimize_mechanics_truss();
+    let svg_str = TrussExporter::to_svg_string(&truss);
+    ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
+}
+
+#[derive(Serialize)]
+struct PbrResponse {
+    albedo: [f64; 3],
+    roughness: f64,
+    metallic: f64,
+}
+
+async fn api_materials_match() -> impl IntoResponse {
+    let target_front = [0.1, 0.2, 0.8]; 
+    let target_edge = [0.2, 0.8, 0.9];
+    let mat = SearuApi::match_pbr_material(target_front, target_edge);
+    
+    Json(PbrResponse {
+        albedo: mat.albedo,
+        roughness: mat.roughness,
+        metallic: mat.metallic,
+    })
 }

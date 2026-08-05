@@ -61,3 +61,49 @@ pub fn chord_roughness(notes: &[Note], harmonics: usize) -> f64 {
     }
     total_dissonance
 }
+
+pub struct Counterpoint;
+
+impl Counterpoint {
+    /// 檢查是否有平行五度或平行八度 (回傳非常高的懲罰值)
+    /// 假設傳入的 chord_a 和 chord_b 都是按音高排序好的陣列
+    pub fn parallel_interval_penalty(chord_a: &[f64], chord_b: &[f64]) -> f64 {
+        let mut penalty = 0.0;
+        let num_voices = chord_a.len();
+        if num_voices != chord_b.len() || num_voices < 2 {
+            return 0.0;
+        }
+
+        for i in 0..num_voices {
+            for j in (i + 1)..num_voices {
+                let interval_a = (chord_a[j] - chord_a[i]).round() as i32;
+                let interval_b = (chord_b[j] - chord_b[i]).round() as i32;
+
+                // 檢查移動方向是否一致 (平行或反向)
+                let move_i = (chord_b[i] - chord_a[i]).round() as i32;
+                let move_j = (chord_b[j] - chord_a[j]).round() as i32;
+                
+                let is_parallel_motion = move_i != 0 && move_j != 0 && (move_i.signum() == move_j.signum());
+
+                if is_parallel_motion {
+                    // 完全五度 (7 個半音) 或 完全八度 (12 個半音)
+                    // 這裡用 % 12 可以同時抓到純十二度 (平行五度的八度延伸)
+                    if (interval_a % 12 == 7 && interval_b % 12 == 7) ||
+                       (interval_a % 12 == 0 && interval_b % 12 == 0 && interval_a != 0) {
+                        penalty += 10000.0; // 極度嚴厲的懲罰
+                    }
+                }
+            }
+        }
+        penalty
+    }
+
+    /// 聲部進行的距離懲罰 (鼓勵平順移動，避免大跳)
+    pub fn voice_leading_distance(chord_a: &[f64], chord_b: &[f64]) -> f64 {
+        let mut distance = 0.0;
+        for i in 0..chord_a.len() {
+            distance += (chord_a[i] - chord_b[i]).abs();
+        }
+        distance // 每一半音加 1 分懲罰
+    }
+}

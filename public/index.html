@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEARU - Universal Generative Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-blur"></div>
+    <div class="container">
+        <header>
+            <h1>SEARU</h1>
+            <p>The Universal Generative Design Engine</p>
+        </header>
+
+        <main class="dashboard">
+            <!-- Music Card -->
+            <div class="card" id="card-music">
+                <div class="card-content">
+                    <h2>🎵 Music Engine</h2>
+                    <p>Bach Counterpoint & Annealing</p>
+                    <button onclick="generateMusic(this)">Generate Progression</button>
+                    <div class="result-area">
+                        <div class="loader"></div>
+                        <audio controls class="hidden"></audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Card -->
+            <div class="card" id="card-visual">
+                <div class="card-content">
+                    <h2>🎨 Visual Engine</h2>
+                    <p>Generative SVG Art</p>
+                    <button onclick="generateVisual(this)">Evolve Geometry</button>
+                    <div class="result-area">
+                        <div class="loader"></div>
+                        <div class="svg-container hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mechanics Card -->
+            <div class="card" id="card-mechanics">
+                <div class="card-content">
+                    <h2>🏗️ Mechanics Engine</h2>
+                    <p>Topology Optimization (Truss)</p>
+                    <button onclick="generateMechanics(this)">Optimize Structure</button>
+                    <div class="result-area">
+                        <div class="loader"></div>
+                        <div class="svg-container hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Materials Card -->
+            <div class="card" id="card-materials">
+                <div class="card-content">
+                    <h2>🔮 Materials Engine</h2>
+                    <p>Inverse PBR Rendering</p>
+                    <button onclick="generateMaterials(this)">Match Material</button>
+                    <div class="result-area">
+                        <div class="loader"></div>
+                        <div class="json-container hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

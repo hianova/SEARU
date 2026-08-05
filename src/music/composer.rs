@@ -3,7 +3,7 @@
 //! "discover" optimal chords or scales by treating them as an optimization problem.
 
 use crate::science::crucible::{Gene, TheCrucible};
-use crate::music::theory::{Note, chord_roughness};
+use crate::music::theory::{Note, chord_roughness, Counterpoint};
 
 pub struct EvolutionaryComposer;
 
@@ -50,5 +50,75 @@ impl EvolutionaryComposer {
         for g in best_genes {
             println!(" - {}: {:.2} (Freq: {:.2} Hz)", g.name, g.current_value, Note::new(g.current_value).to_freq());
         }
+    }
+
+    /// Discovers the next chord in a progression, obeying Counterpoint rules
+    /// to avoid parallel 5ths/8ves and preferring smooth voice leading.
+    pub fn discover_bach_progression(chord_a: &[f64]) -> Vec<f64> {
+        println!("🎵 Bach Engine: Searching for the next chord after {:?}...", chord_a);
+        
+        let mut genes = vec![];
+        let names = ["Bass", "Middle", "Soprano"];
+        
+        for i in 0..chord_a.len() {
+            genes.push(Gene {
+                name: names.get(i).unwrap_or(&"Voice").to_string(),
+                // Search within an octave below to an octave above the previous note
+                bounds: (chord_a[i] - 12.0, chord_a[i] + 12.0),
+                current_value: chord_a[i], // Initial guess: stay on the same note
+            });
+        }
+
+        let iterations = 20000; // Increased iterations for more complex landscape
+
+        let (best_fitness, best_genes) = TheCrucible::anneal(
+            genes,
+            |current_genes| {
+                // Force standard piano keys (integer semitones) by rounding
+                let mut chord_b_midi = Vec::new();
+                for g in current_genes {
+                    chord_b_midi.push(g.current_value.round());
+                }
+                
+                // 1. Sort both chords to ensure voice order is Bass -> Soprano for rule checking
+                let mut sorted_a = chord_a.to_vec();
+                sorted_a.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                let mut sorted_b = chord_b_midi.clone();
+                sorted_b.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+                // 2. Evaluate individual Roughness of Chord B
+                let notes_b: Vec<Note> = chord_b_midi.iter().map(|&m| Note::new(m)).collect();
+                let roughness = chord_roughness(&notes_b, 6);
+
+                // 3. Counterpoint Rules
+                let parallel_penalty = Counterpoint::parallel_interval_penalty(&sorted_a, &sorted_b);
+                let vl_distance = Counterpoint::voice_leading_distance(&sorted_a, &sorted_b);
+                
+                // 4. Stay active penalty: discourage staying on the exact same chord
+                let mut movement = 0.0;
+                for i in 0..sorted_a.len() {
+                    movement += (sorted_a[i] - sorted_b[i]).abs();
+                }
+                let stagnation_penalty = if movement < 2.0 { 100.0 } else { 0.0 };
+
+                // Combine into a single fitness score (Cost to minimize)
+                roughness + (vl_distance * 0.5) + parallel_penalty + stagnation_penalty
+            },
+            iterations
+        );
+
+        println!("✅ Bach Progression Discovery Complete!");
+        println!("Minimum Cost Score: {:.4}", best_fitness);
+        println!("Previous Chord (A): {:?}", chord_a);
+        println!("Next Chord (B):");
+        
+        let mut result = Vec::new();
+        for g in best_genes {
+            let val = g.current_value.round();
+            println!(" - {}: {:.0}", g.name, val);
+            result.push(val);
+        }
+        
+        result
     }
 }
