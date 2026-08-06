@@ -18,8 +18,11 @@ impl TheCrucible {
     where
         F: FnMut(&[Gene]) -> f64,
     {
-        println!("🔥 The Crucible: Igniting Simulated Annealing for {} iterations...", iterations);
-        
+        println!(
+            "🔥 The Crucible: Igniting Simulated Annealing for {} iterations...",
+            iterations
+        );
+
         let initial_temp = 100.0_f64;
         let final_temp = 0.001_f64;
         let cooling_rate = (final_temp / initial_temp).powf(1.0 / (iterations as f64));
@@ -27,28 +30,29 @@ impl TheCrucible {
         let mut current_fitness = evaluate(&genes);
         let mut best_fitness = current_fitness;
         let mut best_genes = genes.clone();
-        
+
         let mut current_temp = initial_temp;
 
         for _ in 0..iterations {
             let mut candidate_genes = genes.clone();
-            
+
             // Perturb genes
             for gene in &mut candidate_genes {
                 let range = gene.bounds.1 - gene.bounds.0;
                 // Step size scales with temperature, but has a minimum bound
-                let max_step = range * (current_temp / initial_temp).max(0.05); 
+                let max_step = range * (current_temp / initial_temp).max(0.05);
                 let step = (rand::random::<f64>() - 0.5) * max_step;
-                gene.current_value = (gene.current_value + step).clamp(gene.bounds.0, gene.bounds.1);
+                gene.current_value =
+                    (gene.current_value + step).clamp(gene.bounds.0, gene.bounds.1);
             }
 
             let candidate_fitness = evaluate(&candidate_genes);
-            
+
             // Acceptance probability
             if candidate_fitness < current_fitness {
                 genes = candidate_genes.clone();
                 current_fitness = candidate_fitness;
-                
+
                 if current_fitness < best_fitness {
                     best_fitness = current_fitness;
                     best_genes = candidate_genes;
@@ -65,7 +69,7 @@ impl TheCrucible {
 
             current_temp *= cooling_rate;
         }
-        
+
         (best_fitness, best_genes)
     }
 }

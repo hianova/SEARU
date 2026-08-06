@@ -31,15 +31,20 @@ impl Note {
 /// Computes the psychoacoustic sensory dissonance between two frequencies
 /// based on the Plomp-Levelt curve.
 pub fn dissonance(freq1: f64, amp1: f64, freq2: f64, amp2: f64) -> f64 {
-    let (f_min, f_max) = if freq1 < freq2 { (freq1, freq2) } else { (freq2, freq1) };
+    let (f_min, f_max) = if freq1 < freq2 {
+        (freq1, freq2)
+    } else {
+        (freq2, freq1)
+    };
     let s = 0.24 / (0.0207 * f_min + 18.96);
     let diff = f_max - f_min;
-    
+
     let a = 3.51;
     let b = 5.75;
-    
+
     // Plomp & Levelt parameterization (Sethares, 1993)
-    let d = (amp1 * amp2) * ((std::f64::consts::E).powf(-a * s * diff) - (std::f64::consts::E).powf(-b * s * diff));
+    let d = (amp1 * amp2)
+        * ((std::f64::consts::E).powf(-a * s * diff) - (std::f64::consts::E).powf(-b * s * diff));
     d.max(0.0) // Clamp negative values just in case
 }
 
@@ -82,14 +87,16 @@ impl Counterpoint {
                 // 檢查移動方向是否一致 (平行或反向)
                 let move_i = (chord_b[i] - chord_a[i]).round() as i32;
                 let move_j = (chord_b[j] - chord_a[j]).round() as i32;
-                
-                let is_parallel_motion = move_i != 0 && move_j != 0 && (move_i.signum() == move_j.signum());
+
+                let is_parallel_motion =
+                    move_i != 0 && move_j != 0 && (move_i.signum() == move_j.signum());
 
                 if is_parallel_motion {
                     // 完全五度 (7 個半音) 或 完全八度 (12 個半音)
                     // 這裡用 % 12 可以同時抓到純十二度 (平行五度的八度延伸)
-                    if (interval_a % 12 == 7 && interval_b % 12 == 7) ||
-                       (interval_a % 12 == 0 && interval_b % 12 == 0 && interval_a != 0) {
+                    if (interval_a % 12 == 7 && interval_b % 12 == 7)
+                        || (interval_a % 12 == 0 && interval_b % 12 == 0 && interval_a != 0)
+                    {
                         penalty += 10000.0; // 極度嚴厲的懲罰
                     }
                 }

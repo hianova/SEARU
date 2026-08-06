@@ -1,5 +1,5 @@
+use hound::{SampleFormat, WavSpec, WavWriter};
 use std::io::Cursor;
-use hound::{WavSpec, WavWriter, SampleFormat};
 
 pub struct AudioExporter;
 
@@ -15,7 +15,11 @@ impl AudioExporter {
     }
 
     /// Saves an audio buffer directly to a .wav file on the local filesystem.
-    pub fn save_to_wav_file(filename: &str, buffer: &[f32], sample_rate: u32) -> Result<(), hound::Error> {
+    pub fn save_to_wav_file(
+        filename: &str,
+        buffer: &[f32],
+        sample_rate: u32,
+    ) -> Result<(), hound::Error> {
         let spec = Self::create_spec(sample_rate);
         let mut writer = WavWriter::create(filename, spec)?;
         for &sample in buffer {
@@ -29,7 +33,7 @@ impl AudioExporter {
     pub fn encode_to_wav_bytes(buffer: &[f32], sample_rate: u32) -> Result<Vec<u8>, hound::Error> {
         let spec = Self::create_spec(sample_rate);
         let mut cursor = Cursor::new(Vec::new());
-        
+
         {
             let mut writer = WavWriter::new(&mut cursor, spec)?;
             for &sample in buffer {
@@ -37,7 +41,7 @@ impl AudioExporter {
             }
             writer.finalize()?;
         }
-        
+
         Ok(cursor.into_inner())
     }
 }

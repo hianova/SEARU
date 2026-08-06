@@ -40,6 +40,16 @@ async function handleRequest(btn, url, type, containerSelector) {
     }
 }
 
+function generateFractal(btn) {
+    handleRequest(btn, '/api/fractal/universe', 'svg', '.svg-container').then(() => {
+        setupInfiniteZoom();
+    });
+}
+
+function generateMegaCity(btn) {
+    handleRequest(btn, '/api/megacity/pipeline', 'svg', '.svg-container');
+}
+
 function generateMusic(btn) {
     handleRequest(btn, '/api/music/bach', 'audio', 'audio');
 }
@@ -75,3 +85,55 @@ function generateTypo(btn) {
 function generateAnim(btn) {
     handleRequest(btn, '/api/procedural_animation/curve', 'json', '.json-container');
 }
+
+// Infinite Zoom / Pan Logic
+function setupInfiniteZoom() {
+    const container = document.getElementById('fractal-container');
+    const svg = document.getElementById('fractal-svg');
+    if (!svg) return;
+
+    let scale = 1;
+    let panX = 0;
+    let panY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    // Apply transform
+    const updateTransform = () => {
+        svg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+        svg.style.transformOrigin = 'center';
+    };
+
+    // Zoom on wheel
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomIntensity = 0.1;
+        const wheel = e.deltaY < 0 ? 1 : -1;
+        scale *= Math.exp(wheel * zoomIntensity);
+        updateTransform();
+    }, { passive: false });
+
+    // Pan on drag
+    container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+        container.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+        container.style.cursor = 'grab';
+    });
+    
+    updateTransform();
+}
+

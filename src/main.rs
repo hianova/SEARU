@@ -1,34 +1,35 @@
-mod api;
-mod science;
-mod music;
-mod visual;
-mod mechanics;
-mod materials;
-mod architecture;
-mod ui_layout;
-mod pcb_routing;
-mod typography;
-mod procedural_animation;
+#![allow(unused)]
+#![allow(dead_code)]
 
-use axum::{
-    routing::get,
-    Router,
-    response::IntoResponse,
-    http::header,
-    Json
-};
+mod api;
+mod architecture;
+mod fractal;
+mod materials;
+mod mechanics;
+mod megacity;
+mod music;
+mod pcb_routing;
+mod procedural_animation;
+mod science;
+mod typography;
+mod ui_layout;
+mod visual;
+
+use axum::{Json, Router, http::header, response::IntoResponse, routing::get};
 use serde::Serialize;
-use tower_http::services::ServeDir;
-use tower_http::cors::CorsLayer;
 use std::net::SocketAddr;
+use tower_http::cors::CorsLayer;
+use tower_http::services::ServeDir;
 
 use api::SearuApi;
-use music::dsp::exporter::AudioExporter;
-use visual::exporter::SvgExporter;
-use mechanics::exporter::TrussExporter;
 use architecture::FloorPlanner;
+use fractal::FractalEngine;
+use mechanics::exporter::TrussExporter;
+use megacity::MegaCityPipeline;
+use music::dsp::exporter::AudioExporter;
 use pcb_routing::PcbRouter;
 use typography::TypographyGenerator;
+use visual::exporter::SvgExporter;
 
 #[tokio::main]
 async fn main() {
@@ -45,6 +46,8 @@ async fn main() {
         .route("/api/pcb_routing/route", get(api_pcb_route))
         .route("/api/typography/glyph", get(api_typography_glyph))
         .route("/api/procedural_animation/curve", get(api_anim_curve))
+        .route("/api/megacity/pipeline", get(api_megacity_pipeline))
+        .route("/api/fractal/universe", get(api_fractal_universe))
         .layer(CorsLayer::permissive());
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
@@ -54,7 +57,8 @@ async fn main() {
 
 async fn api_music_bach() -> impl IntoResponse {
     let sample_rate = 44100;
-    let bach_audio_buffer = SearuApi::generate_bach_progression(&[60.0, 64.0, 67.0], 4, 1.2, sample_rate);
+    let bach_audio_buffer =
+        SearuApi::generate_bach_progression(&[60.0, 64.0, 67.0], 4, 1.2, sample_rate);
     let bytes = AudioExporter::encode_to_wav_bytes(&bach_audio_buffer, sample_rate).unwrap();
     ([(header::CONTENT_TYPE, "audio/wav")], bytes)
 }
@@ -79,10 +83,14 @@ struct PbrResponse {
 }
 
 async fn api_materials_match() -> impl IntoResponse {
-    let target_front = [0.1, 0.2, 0.8]; 
+    let target_front = [0.1, 0.2, 0.8];
     let target_edge = [0.2, 0.8, 0.9];
     let mat = SearuApi::match_pbr_material(target_front, target_edge);
-    Json(PbrResponse { albedo: mat.albedo, roughness: mat.roughness, metallic: mat.metallic })
+    Json(PbrResponse {
+        albedo: mat.albedo,
+        roughness: mat.roughness,
+        metallic: mat.metallic,
+    })
 }
 
 async fn api_arch_floorplan() -> impl IntoResponse {
@@ -109,4 +117,14 @@ async fn api_typography_glyph() -> impl IntoResponse {
 
 async fn api_anim_curve() -> impl IntoResponse {
     Json(SearuApi::optimize_animation_transition())
+}
+
+async fn api_megacity_pipeline() -> impl IntoResponse {
+    let svg_str = MegaCityPipeline::run_pipeline();
+    ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
+}
+
+async fn api_fractal_universe() -> impl IntoResponse {
+    let svg_str = FractalEngine::generate_universe();
+    ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
 }
