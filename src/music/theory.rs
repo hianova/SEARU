@@ -12,7 +12,7 @@ impl Note {
 
     /// Converts a MIDI note number to its physical frequency (Hz)
     pub fn to_freq(&self) -> f64 {
-        440.0 * (2.0f64).powf((self.midi_note - 69.0) / 12.0)
+        432.0 * (2.0f64).powf((self.midi_note - 69.0) / 12.0)
     }
 
     /// Generates the harmonic series of this note up to `n` harmonics

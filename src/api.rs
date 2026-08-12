@@ -31,11 +31,13 @@ impl SearuApi {
         sample_rate: u32,
     ) -> Vec<f32> {
         let mut current_chord = start_chord.to_vec();
+        let mut history = vec![current_chord.clone()];
         let mut progression = vec![current_chord.clone()];
 
         for _ in 0..num_chords.saturating_sub(1) {
-            let next_chord = EvolutionaryComposer::discover_bach_progression(&current_chord);
+            let next_chord = EvolutionaryComposer::discover_bach_progression(&history);
             progression.push(next_chord.clone());
+            history.push(next_chord.clone());
             current_chord = next_chord;
         }
 

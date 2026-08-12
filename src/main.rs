@@ -14,6 +14,7 @@ mod science;
 mod typography;
 mod ui_layout;
 mod visual;
+mod album;
 
 use axum::{Json, Router, http::header, response::IntoResponse, routing::get};
 use serde::Serialize;
@@ -48,6 +49,7 @@ async fn main() {
         .route("/api/procedural_animation/curve", get(api_anim_curve))
         .route("/api/megacity/pipeline", get(api_megacity_pipeline))
         .route("/api/fractal/universe", get(api_fractal_universe))
+        .route("/api/album/release", get(api_album_release))
         .layer(CorsLayer::permissive());
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
@@ -127,4 +129,11 @@ async fn api_megacity_pipeline() -> impl IntoResponse {
 async fn api_fractal_universe() -> impl IntoResponse {
     let svg_str = FractalEngine::generate_universe();
     ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
+}
+
+async fn api_album_release() -> impl IntoResponse {
+    std::thread::spawn(|| {
+        album::AlbumProducer::release_album(10);
+    });
+    Json(serde_json::json!({"status": "Parallel Album production (10 tracks) started! Check the /release directory in a few seconds."}))
 }

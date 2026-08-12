@@ -65,8 +65,10 @@ impl EvolutionaryComposer {
     }
 
     /// Discovers the next chord in a progression, obeying Counterpoint rules
-    /// to avoid parallel 5ths/8ves and preferring smooth voice leading.
-    pub fn discover_bach_progression(chord_a: &[f64]) -> Vec<f64> {
+    /// to avoid parallel 5ths/8ves and preferring smooth voice leading,
+    /// while strictly enforcing a Major diatonic scale and penalizing oscillation.
+    pub fn discover_bach_progression(history: &[Vec<f64>]) -> Vec<f64> {
+        let chord_a = history.last().expect("History cannot be empty");
         println!(
             "🎵 Bach Engine: Searching for the next chord after {:?}...",
             chord_a
@@ -89,10 +91,19 @@ impl EvolutionaryComposer {
         let (best_fitness, best_genes) = TheCrucible::anneal(
             genes,
             |current_genes| {
-                // Force standard piano keys (integer semitones) by rounding
+                // Force to C Major Scale
+                let snap_to_scale = |midi: f64| -> f64 {
+                    let note = midi.round() as i32;
+                    let pc = note.rem_euclid(12);
+                    let shift = match pc {
+                        1 => -1, 3 => -1, 6 => 1, 8 => -1, 10 => -1, _ => 0,
+                    };
+                    (note + shift) as f64
+                };
+
                 let mut chord_b_midi = Vec::new();
                 for g in current_genes {
-                    chord_b_midi.push(g.current_value.round());
+                    chord_b_midi.push(snap_to_scale(g.current_value));
                 }
 
                 // 1. Sort both chords to ensure voice order is Bass -> Soprano for rule checking
@@ -117,8 +128,26 @@ impl EvolutionaryComposer {
                 }
                 let stagnation_penalty = if movement < 2.0 { 100.0 } else { 0.0 };
 
+                // 5. History Penalty: Prevent oscillation (A -> B -> A)
+                let mut history_penalty = 0.0;
+                for past_chord in history {
+                    let mut past_sorted = past_chord.clone();
+                    past_sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                    
+                    let mut diff = 0.0;
+                    for i in 0..sorted_b.len() {
+                        diff += (sorted_b[i] - past_sorted[i]).abs();
+                    }
+                    if diff < 2.0 {
+                        history_penalty += 50.0; // Huge penalty for returning to a recent chord
+                    }
+                }
+                
+                // 6. Entropy (Harmonic Gravity) - slight randomness so it doesn't get stuck
+                let entropy = rand::random::<f64>() * 2.0;
+
                 // Combine into a single fitness score (Cost to minimize)
-                roughness + (vl_distance * 0.5) + parallel_penalty + stagnation_penalty
+                roughness + (vl_distance * 0.5) + parallel_penalty + stagnation_penalty + history_penalty + entropy
             },
             iterations,
         );
@@ -130,7 +159,13 @@ impl EvolutionaryComposer {
 
         let mut result = Vec::new();
         for g in best_genes {
-            let val = g.current_value.round();
+            let note = g.current_value.round() as i32;
+            let pc = note.rem_euclid(12);
+            let shift = match pc {
+                1 => -1, 3 => -1, 6 => 1, 8 => -1, 10 => -1, _ => 0,
+            };
+            let val = (note + shift) as f64;
+            
             println!(" - {}: {:.0}", g.name, val);
             result.push(val);
         }

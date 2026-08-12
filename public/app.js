@@ -86,6 +86,16 @@ function generateAnim(btn) {
     handleRequest(btn, '/api/procedural_animation/curve', 'json', '.json-container');
 }
 
+async function runAlbumRelease() {
+    try {
+        const res = await fetch('/api/album/release');
+        const data = await res.json();
+        alert(data.status);
+    } catch (e) {
+        alert('Error: ' + e);
+    }
+}
+
 // Infinite Zoom / Pan Logic
 function setupInfiniteZoom() {
     const container = document.getElementById('fractal-container');
