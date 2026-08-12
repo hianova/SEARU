@@ -26,14 +26,14 @@ impl AlbumProducer {
             // Generate Audio
             let sample_rate = 44100;
             // Generate 8 bars for demo speed, can be increased for full tracks
-            let audio_data = Arranger::compose_track(&seed_chord, 8, bpm, sample_rate); 
+            let (audio_data, cost_scores) = Arranger::compose_track(&seed_chord, 8, bpm, sample_rate); 
             
             // Save WAV
             let wav_path = format!("{}/{}.wav", release_dir, track_name);
             AudioExporter::save_to_wav_file(&wav_path, &audio_data, sample_rate).unwrap();
             
             // Generate Album Art
-            let shapes = VisualComposer::generate_art(i, &track_name); // use 'i' as seed, pass track_name for label
+            let shapes = VisualComposer::generate_art(i, &track_name, &cost_scores);
             let svg_path = format!("{}/{}.svg", release_dir, track_name);
             SvgExporter::save_to_svg(&svg_path, &shapes).unwrap();
             

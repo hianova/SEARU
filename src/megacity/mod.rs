@@ -23,7 +23,7 @@ impl MegaCityPipeline {
 
         // Step 4: Visual Generation
         println!("[MegaPipeline] Phase 4: Rendering Visuals...");
-        let visuals = VisualComposer::generate_art(20, "MegaCity");
+        let visuals = VisualComposer::generate_art(20, "MegaCity", &[]);
 
         // Combine all into a massive SVG
         let mut svg = String::new();

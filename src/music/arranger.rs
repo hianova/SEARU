@@ -6,7 +6,7 @@ use rand::Rng;
 pub struct Arranger;
 
 impl Arranger {
-    pub fn compose_track(seed_chord: &[f64; 3], bars: usize, bpm: f32, sample_rate: u32) -> Vec<f32> {
+    pub fn compose_track(seed_chord: &[f64; 3], bars: usize, bpm: f32, sample_rate: u32) -> (Vec<f32>, Vec<f64>) {
         let mut rng = rand::rng();
         
         let beats_per_bar = 4;
@@ -18,6 +18,7 @@ impl Arranger {
         
         let mut master_track = vec![0.0; total_samples];
         let mut chord_history = vec![seed_chord.to_vec()];
+        let mut cost_scores = vec![0.0]; // The seed chord has no cost, default to 0.0
         
         // --- 1. Generative Rhythmic Engine (Expert Constraints) ---
         let mut kick_pattern = [false; 16];
@@ -83,8 +84,9 @@ impl Arranger {
                 // Keep memory of the last 4 chords to prevent oscillation
                 let start_idx = chord_history.len().saturating_sub(4);
                 let history_slice = &chord_history[start_idx..];
-                let next_chord = EvolutionaryComposer::discover_bach_progression(history_slice);
+                let (next_chord, cost) = EvolutionaryComposer::discover_bach_progression(history_slice);
                 chord_history.push(next_chord);
+                cost_scores.push(cost);
             }
             let current_chord = chord_history.last().unwrap();
             
@@ -204,6 +206,6 @@ impl Arranger {
         // Actually, let's just do a simple master delay but heavily reduce the feedback and mix to clean it up.
         let final_track = Effects::simple_delay(&master_track, delay_samples, 0.15, 0.15); // Drastically reduced delay
         
-        final_track
+        (final_track, cost_scores)
     }
 }

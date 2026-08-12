@@ -7,8 +7,8 @@ use std::f64::consts::PI;
 pub struct VisualComposer;
 
 impl VisualComposer {
-    pub fn generate_art(seed: usize, track_name: &str) -> Vec<Shape> {
-        println!("🎨 Visual Engine: Igniting Kaleidoscope Chaos for {}...", track_name);
+    pub fn generate_art(seed: usize, track_name: &str, cost_scores: &[f64]) -> Vec<Shape> {
+        println!("🎨 Visual Engine: Igniting Synesthesia Chaos for {}...", track_name);
         
         let mut rng_std = StdRng::seed_from_u64(seed as u64 + 777);
         let hue_base = rng_std.random_range(0.0..360.0);
@@ -22,15 +22,28 @@ impl VisualComposer {
             let mut chaos = ChaosState::<3, 2>::new([0.0, 0.0]);
             let mut chaos_rng = RngState::new(seed as u32 + i as u32 * 100);
             
-            let tweak = MicroTweak {
-                s_exponent: 1.2 + rng_std.random_range(0.0_f32..0.5_f32), // More long jumps, less local clustering
+            let mut tweak = MicroTweak {
+                s_exponent: 1.5, // Will be dynamically adjusted below
                 max_elements: 1000,
             };
 
-            let num_steps = 300; // Reduced from 800 to prevent the 'yarn ball' effect in the center
+            let num_steps = 300; 
             let mut raw_points = Vec::with_capacity(num_steps);
             
-            for _ in 0..num_steps {
+            for step in 0..num_steps {
+                // Determine which bar we are currently drawing
+                let bar_idx = (step * cost_scores.len()) / num_steps;
+                let current_cost = cost_scores.get(bar_idx).unwrap_or(&1.2);
+                
+                // Synesthesia Mapping: High Cost (Dissonance) -> Low s_exponent (Chaos Levy Flight)
+                // Low Cost (Consonance) -> High s_exponent (Stable Gaussian Attractor)
+                // Cost is typically between 1.0 (very consonant) and 2.0 (very dissonant)
+                // We map this inversely to s_exponent (1.1 for extreme chaos, 3.0 for stability)
+                let mapped_s = 3.5 - (current_cost * 1.5);
+                let final_s = mapped_s.clamp(1.1, 3.0) as f32;
+                
+                tweak.s_exponent = final_s + rng_std.random_range(-0.1_f32..0.1_f32); // Add slight micro-jitter
+
                 chaos = step_forward_nd(&chaos, &tweak, &mut chaos_rng);
                 raw_points.push(Point {
                     x: chaos.base_values[0] as f64,

@@ -35,7 +35,7 @@ impl SearuApi {
         let mut progression = vec![current_chord.clone()];
 
         for _ in 0..num_chords.saturating_sub(1) {
-            let next_chord = EvolutionaryComposer::discover_bach_progression(&history);
+            let (next_chord, _) = EvolutionaryComposer::discover_bach_progression(&history);
             progression.push(next_chord.clone());
             history.push(next_chord.clone());
             current_chord = next_chord;
@@ -51,7 +51,7 @@ impl SearuApi {
     }
 
     pub fn generate_visual_art(num_shapes: usize, points_per_shape: usize) -> Vec<Shape> {
-        VisualComposer::generate_art(num_shapes, "API_Art")
+        VisualComposer::generate_art(num_shapes, "API_Art", &[1.2])
     }
 
     pub fn optimize_mechanics_truss() -> Truss {

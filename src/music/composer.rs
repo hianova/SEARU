@@ -67,7 +67,7 @@ impl EvolutionaryComposer {
     /// Discovers the next chord in a progression, obeying Counterpoint rules
     /// to avoid parallel 5ths/8ves and preferring smooth voice leading,
     /// while strictly enforcing a Major diatonic scale and penalizing oscillation.
-    pub fn discover_bach_progression(history: &[Vec<f64>]) -> Vec<f64> {
+    pub fn discover_bach_progression(history: &[Vec<f64>]) -> (Vec<f64>, f64) {
         let chord_a = history.last().expect("History cannot be empty");
         println!(
             "🎵 Bach Engine: Searching for the next chord after {:?}...",
@@ -170,6 +170,6 @@ impl EvolutionaryComposer {
             result.push(val);
         }
 
-        result
+        (result, best_fitness)
     }
 }
