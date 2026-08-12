@@ -33,7 +33,7 @@ impl AlbumProducer {
             AudioExporter::save_to_wav_file(&wav_path, &audio_data, sample_rate).unwrap();
             
             // Generate Album Art
-            let shapes = VisualComposer::generate_art(4, i); // use 'i' as seed
+            let shapes = VisualComposer::generate_art(i, &track_name); // use 'i' as seed, pass track_name for label
             let svg_path = format!("{}/{}.svg", release_dir, track_name);
             SvgExporter::save_to_svg(&svg_path, &shapes).unwrap();
             

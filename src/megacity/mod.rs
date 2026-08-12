@@ -23,7 +23,7 @@ impl MegaCityPipeline {
 
         // Step 4: Visual Generation
         println!("[MegaPipeline] Phase 4: Rendering Visuals...");
-        let visuals = VisualComposer::generate_art(20, 4);
+        let visuals = VisualComposer::generate_art(20, "MegaCity");
 
         // Combine all into a massive SVG
         let mut svg = String::new();
@@ -31,24 +31,8 @@ impl MegaCityPipeline {
         svg.push_str("  <rect width=\"100%\" height=\"100%\" fill=\"#0f172a\" />\n");
 
         // Render Visual Art Background
-        for shape in visuals {
-            let pts: Vec<String> = shape
-                .points
-                .iter()
-                .map(|pt| format!("{},{}", pt.x * 1.5, pt.y * 1.5))
-                .collect();
-            let color_str = format!(
-                "hsl({:.1}, {:.1}%, {:.1}%)",
-                shape.color.h,
-                shape.color.s * 100.0,
-                shape.color.l * 100.0
-            );
-            svg.push_str(&format!(
-                "  <polygon points=\"{}\" fill=\"{}\" opacity=\"0.1\" />\n",
-                pts.join(" "),
-                color_str
-            ));
-        }
+        let svg_elements = crate::visual::exporter::SvgExporter::to_svg_elements(&visuals);
+        svg.push_str(&format!("<g opacity=\"0.15\" transform=\"scale(1.5)\">\n{}\n</g>\n", svg_elements));
 
         // Render Truss Mechanics
         for bar in truss.bars {

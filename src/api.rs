@@ -51,7 +51,7 @@ impl SearuApi {
     }
 
     pub fn generate_visual_art(num_shapes: usize, points_per_shape: usize) -> Vec<Shape> {
-        VisualComposer::generate_art(num_shapes, points_per_shape)
+        VisualComposer::generate_art(num_shapes, "API_Art")
     }
 
     pub fn optimize_mechanics_truss() -> Truss {

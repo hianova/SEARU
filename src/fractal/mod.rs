@@ -137,30 +137,12 @@ impl FractalEngine {
             }
             3 => {
                 // Depth 3: Visual Art (Mapped perfectly inside the circular Pad)
-                let visuals = VisualComposer::generate_art(4, 3);
-                for shape in visuals {
-                    let pts: Vec<String> = shape
-                        .points
-                        .iter()
-                        .map(|pt| {
-                            let px = offset_x + (pt.x / 500.0) * scale_w;
-                            let py = offset_y + (pt.y / 500.0) * scale_h;
-                            format!("{:.2},{:.2}", px, py)
-                        })
-                        .collect();
-
-                    let color_str = format!(
-                        "hsl({:.1}, {:.1}%, {:.1}%)",
-                        shape.color.h,
-                        shape.color.s * 100.0,
-                        shape.color.l * 100.0
-                    );
-                    out.push_str(&format!(
-                        "  <polygon points=\"{}\" fill=\"{}\" opacity=\"0.7\" />\n",
-                        pts.join(" "),
-                        color_str
-                    ));
-                }
+                let visuals = VisualComposer::generate_art(depth + offset_x as usize, "Fractal");
+                let svg_elements = crate::visual::exporter::SvgExporter::to_svg_elements(&visuals);
+                out.push_str(&format!(
+                    "  <svg x=\"{:.2}\" y=\"{:.2}\" width=\"{:.2}\" height=\"{:.2}\" viewBox=\"0 0 800 800\">\n{}\n  </svg>\n",
+                    offset_x, offset_y, scale_w, scale_h, svg_elements
+                ));
             }
             _ => {}
         }
