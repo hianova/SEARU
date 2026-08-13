@@ -122,14 +122,32 @@ impl DrumMachine {
         let mut buffer = vec![0.0; total_samples];
         let decay_samples = (0.05 * sample_rate as f32) as usize; // very short decay
 
+        // Simple 1-pole High Pass Filter for HiHat (Cutoff ~ 8000 Hz)
+        let cutoff_freq = 8000.0;
+        let rc = 1.0 / (2.0 * PI * cutoff_freq);
+        let dt = 1.0 / sample_rate as f32;
+        let alpha = rc / (rc + dt);
+        
+        let mut prev_input = 0.0;
+        let mut prev_output = 0.0;
+
         for i in 0..total_samples {
             let mut envelope = 0.0;
             if i < decay_samples {
-                envelope = 1.0 - (i as f32 / decay_samples as f32);
+                // Exponential decay sounds more natural for percussion than linear
+                let t = i as f32 / decay_samples as f32;
+                envelope = (1.0 - t).powf(2.0); 
             }
             // Pseudo-random noise for hihat
             let noise: f32 = (rand::random::<f32>() * 2.0) - 1.0;
-            buffer[i] = noise * envelope * 0.4;
+            
+            // Apply High Pass Filter
+            let filtered_noise = alpha * (prev_output + noise - prev_input);
+            prev_input = noise;
+            prev_output = filtered_noise;
+            
+            // Boost amplitude slightly since HPF removes a lot of energy
+            buffer[i] = filtered_noise * envelope * 1.5;
         }
         buffer
     }

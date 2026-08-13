@@ -208,16 +208,12 @@ impl Arranger {
             }
         }
         
-        // Apply Master Effects (Delay only on Mid/High frequencies to prevent low-end mud)
-        println!("Applying Master Effects...");
-        let delay_samples = (seconds_per_beat * 0.75 * sample_rate as f32) as usize; // dotted 8th note delay
-        
-        // We need to delay only the mid/high frequencies. 
-        // Since we already mixed everything into master_track, we should have applied delay BEFORE mixdown.
-        // To fix this without a huge rewrite, we'll just return master_track directly if we want a clean mix, 
-        // or we rewrite the mixdown.
-        // Actually, let's just do a simple master delay but heavily reduce the feedback and mix to clean it up.
-        let final_track = Effects::simple_delay(&master_track, delay_samples, 0.15, 0.15); // Drastically reduced delay
+        // Apply Master Chaotic Acoustic Space (Schroeder Reverb)
+        println!("🌌 Igniting Chaotic Acoustic Space (Environmental Reverb)...");
+        // Mix: 20% Wet (cinematic but keeps kick punchy)
+        // Room Size: 0.95 (Massive Cathedral/Abyss)
+        // Damping: 0.2 (Bright, long high-frequency decay)
+        let final_track = Effects::process_reverb(&master_track, 0.2, 0.95, 0.2);
         
         (final_track, cost_scores)
     }

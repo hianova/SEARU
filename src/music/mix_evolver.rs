@@ -56,8 +56,8 @@ impl MixEvolver {
             Gene { name: "vol_bass".to_string(), bounds: (0.1, 1.0), current_value: 0.5 },
             Gene { name: "vol_pad".to_string(), bounds: (0.1, 0.8), current_value: 0.4 },
             Gene { name: "vol_arp".to_string(), bounds: (0.1, 0.8), current_value: 0.4 },
-            Gene { name: "vol_kick".to_string(), bounds: (0.2, 1.2), current_value: 0.8 },
-            Gene { name: "vol_hat".to_string(), bounds: (0.05, 0.5), current_value: 0.2 },
+            Gene { name: "vol_kick".to_string(), bounds: (0.05, 0.35), current_value: 0.15 },
+            Gene { name: "vol_hat".to_string(), bounds: (0.01, 0.15), current_value: 0.05 },
         ];
 
         let (_best_fitness, best_genes) = TheCrucible::anneal(
@@ -102,10 +102,9 @@ impl MixEvolver {
                 let kick_energy = kick_low * v_kick;
                 let bass_energy = b_low * v_bass;
                 let ratio = kick_energy / bass_energy.max(0.001);
-                if ratio < 0.5 {
-                    penalty += (0.5 - ratio) * 20.0; // Kick lost
-                } else if ratio > 2.0 {
-                    penalty += (ratio - 2.0) * 20.0; // Bass lost
+                // In cinematic music, kick should be subdued compared to bass, not equal.
+                if ratio > 0.4 {
+                    penalty += (ratio - 0.4) * 20.0; // Kick is too loud!
                 }
 
                 penalty
