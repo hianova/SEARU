@@ -1,4 +1,5 @@
 use crate::music::arranger::Arranger;
+use crate::music::macro_arranger::MacroArranger;
 use crate::music::dsp::exporter::AudioExporter;
 use crate::visual::composer::VisualComposer;
 use crate::visual::exporter::SvgExporter;
@@ -25,8 +26,12 @@ impl AlbumProducer {
             
             // Generate Audio
             let sample_rate = 44100;
-            // Generate 8 bars for demo speed, can be increased for full tracks
-            let (audio_data, cost_scores) = Arranger::compose_track(&seed_chord, 8, bpm, sample_rate); 
+            // Generate 3 minutes of music
+            let length_minutes = 3.0;
+            let total_bars = (length_minutes * bpm / 4.0).round() as usize;
+            
+            let energy_curve = MacroArranger::evolve_energy_curve(total_bars);
+            let (audio_data, cost_scores) = Arranger::compose_track(&seed_chord, total_bars, bpm, sample_rate, &energy_curve); 
             
             // Save WAV
             let wav_path = format!("{}/{}.wav", release_dir, track_name);

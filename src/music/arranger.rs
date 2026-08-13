@@ -1,12 +1,15 @@
 use crate::music::composer::EvolutionaryComposer;
-use crate::music::dsp::synth::{FMSynth, DrumMachine};
+use crate::music::dsp::synth::DrumMachine;
+use crate::music::dsp::evo_synth::EvolutionarySynth;
+use crate::music::timbre_evolver::{TimbreEvolver, InstrumentType};
+use crate::music::mix_evolver::MixEvolver;
 use crate::music::dsp::effects::Effects;
 use rand::Rng;
 
 pub struct Arranger;
 
 impl Arranger {
-    pub fn compose_track(seed_chord: &[f64; 3], bars: usize, bpm: f32, sample_rate: u32) -> (Vec<f32>, Vec<f64>) {
+    pub fn compose_track(seed_chord: &[f64; 3], bars: usize, bpm: f32, sample_rate: u32, energy_curve: &[f64]) -> (Vec<f32>, Vec<f64>) {
         let mut rng = rand::rng();
         
         let beats_per_bar = 4;
@@ -61,23 +64,27 @@ impl Arranger {
             }
         }
         
-        // --- 2. Timbral Space (Expert Constraints / Sweet Spots) ---
-        let bass_ratios = [0.5, 1.0]; // Removed 2.0 to keep bass deep and subby
-        let pad_ratios = [1.0, 2.0];
-        let arp_ratios = [3.0, 4.0, 5.0, 7.0];
+        // --- 2. Evolutionary Timbre Space ---
+        println!("🧬 Evolving Bass Timbre...");
+        let bass_profile = TimbreEvolver::evolve_instrument(InstrumentType::Bass);
+        println!("🧬 Evolving Pad Timbre...");
+        let pad_profile = TimbreEvolver::evolve_instrument(InstrumentType::Pad);
+        println!("🧬 Evolving Arp Timbre...");
+        let arp_profile = TimbreEvolver::evolve_instrument(InstrumentType::Arp);
         
-        let bass_fm_ratio = bass_ratios[rng.random_range(0..bass_ratios.len())];
-        let bass_fm_index = rng.random_range(0.1..0.5); // Lower index for cleaner sub-bass without noise
-        
-        // Tame the Pad and Arp index to prevent high-frequency sideband clash
-        let pad_fm_ratio = pad_ratios[rng.random_range(0..pad_ratios.len())];
-        let pad_fm_index = rng.random_range(0.5..1.2); // Reduced from 3.0
-        
-        let arp_fm_ratio = arp_ratios[rng.random_range(0..arp_ratios.len())];
-        let arp_fm_index = rng.random_range(0.5..1.5); // Reduced from 4.0
+        // --- 3. Evolutionary Auto-Mixer (Pink Noise Spectrum) ---
+        println!("🎚️ Evolving Mixdown...");
+        let mix_profile = MixEvolver::evolve_mix(&bass_profile, &pad_profile, &arp_profile);
         
         for bar in 0..bars {
-            println!("Arranging Bar {}/{}...", bar + 1, bars);
+            let current_energy = *energy_curve.get(bar).unwrap_or(&0.5) as f32;
+            
+            // --- NEURAL MAPPING: Energy Curve to Timbre Brightness ---
+            let dynamic_pad_brightness = 0.2 + current_energy * 0.8;
+            let dynamic_bass_brightness = 0.5 + current_energy * 0.5;
+            let dynamic_arp_brightness = 0.4 + current_energy * 0.6;
+            
+            println!("Arranging Bar {}/{}... (Energy: {:.2})", bar + 1, bars, current_energy);
             
             // Evolve next chord (4-bar phrasing: change chord every bar)
             if bar > 0 {
@@ -112,9 +119,9 @@ impl Arranger {
                 if bass_pattern[step] {
                     // Play a 16th or 8th note bass pluck depending on style
                     let dur = if style == 0 { seconds_per_16th * 1.5 } else { seconds_per_16th * 2.5 };
-                    let step_audio = FMSynth::render_note(bass_note, dur, sample_rate, bass_fm_ratio, bass_fm_index);
+                    let step_audio = EvolutionarySynth::render_note(bass_note, dur, sample_rate, &bass_profile, dynamic_bass_brightness);
                     // Minimal soft clipping (1.2 instead of 3.0) to prevent fuzzy "noise" distortion
-                    let clipped = Effects::soft_clip(&step_audio, 1.2);
+                    let clipped = Effects::soft_clip(&step_audio, 1.2 + current_energy);
                     for i in 0..clipped.len() {
                         if step_start + i < samples_per_bar {
                             bass_audio[step_start + i] += clipped[i];
@@ -127,7 +134,7 @@ impl Arranger {
                     // Play a long pad (half bar or full bar)
                     let dur = if step == 0 { seconds_per_bar } else { seconds_per_bar / 2.0 };
                     for &note in current_chord.iter() {
-                        let step_audio = FMSynth::render_note(note + 12.0, dur, sample_rate, pad_fm_ratio, pad_fm_index);
+                        let step_audio = EvolutionarySynth::render_note(note + 12.0, dur, sample_rate, &pad_profile, dynamic_pad_brightness);
                         for i in 0..step_audio.len() {
                             if step_start + i < samples_per_bar {
                                 pad_audio[step_start + i] += step_audio[i] * 0.33;
@@ -137,10 +144,10 @@ impl Arranger {
                 }
                 
                 // Arp
-                if arp_pattern[step] {
+                if arp_pattern[step] && current_energy > 0.4 { // Arp only enters after 40% energy
                     let note_idx = rng.random_range(0..arp_notes.len());
                     let note = arp_notes[note_idx];
-                    let step_audio = FMSynth::render_note(note, seconds_per_16th * 1.5, sample_rate, arp_fm_ratio, arp_fm_index);
+                    let step_audio = EvolutionarySynth::render_note(note, seconds_per_16th * 1.5, sample_rate, &arp_profile, dynamic_arp_brightness);
                     for i in 0..step_audio.len() {
                         if step_start + i < samples_per_bar {
                             arp_audio[step_start + i] += step_audio[i] * 0.5;
@@ -149,11 +156,11 @@ impl Arranger {
                 }
                 
                 // Kick
-                if kick_pattern[step] {
+                if kick_pattern[step] && current_energy > 0.6 { // Kick drum drops at 60% energy (The Drop)
                     let kick = DrumMachine::kick(seconds_per_16th * 2.0, sample_rate);
                     for i in 0..kick.len() {
                         if step_start + i < samples_per_bar {
-                            drum_audio[step_start + i] += kick[i];
+                            drum_audio[step_start + i] += kick[i] * mix_profile.vol_kick;
                         }
                     }
                 }
@@ -163,7 +170,7 @@ impl Arranger {
                     let hat = DrumMachine::hihat(seconds_per_16th, sample_rate);
                     for i in 0..hat.len() {
                         if step_start + i < samples_per_bar {
-                            drum_audio[step_start + i] += hat[i];
+                            drum_audio[step_start + i] += hat[i] * mix_profile.vol_hat;
                         }
                     }
                 }
@@ -175,8 +182,8 @@ impl Arranger {
                 if sample_idx < total_samples {
                     // Ducking (Sidechain compression) simulator: 
                     // Reduce pad volume slightly if a kick is playing
-                    let mut pad_vol = 0.5;
-                    let mut bass_vol = 0.8;
+                    let mut pad_vol = mix_profile.vol_pad;
+                    let mut bass_vol = mix_profile.vol_bass;
                     
                     // Simple ducking based on drum peak (kick)
                     if drum_audio[i] > 0.2 {
@@ -184,11 +191,17 @@ impl Arranger {
                         bass_vol *= 0.7;
                     }
                     
+                    // Master Energy Automation
+                    pad_vol *= 0.5 + current_energy * 0.5;
+                    bass_vol *= 0.3 + current_energy * 0.7;
+                    
                     let mut mixed = 0.0;
                     mixed += bass_audio.get(i).unwrap_or(&0.0) * bass_vol;
                     mixed += pad_audio.get(i).unwrap_or(&0.0) * pad_vol;
-                    mixed += arp_audio.get(i).unwrap_or(&0.0) * 0.6;
-                    mixed += drum_audio.get(i).unwrap_or(&0.0) * 0.9;
+                    mixed += arp_audio.get(i).unwrap_or(&0.0) * mix_profile.vol_arp;
+                    
+                    // Drum volumes are already scaled by their specific evolved volumes when added to drum_audio
+                    mixed += drum_audio.get(i).unwrap_or(&0.0);
                     
                     master_track[sample_idx] = mixed;
                 }
