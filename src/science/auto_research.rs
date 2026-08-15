@@ -16,6 +16,7 @@ pub struct AutoResearcher {
     pub config: AutoResearchConfig,
     pub log_gen: bool,
     pub prefix: String,
+    pub history: Vec<u32>,
 }
 
 impl AutoResearcher {
@@ -24,6 +25,7 @@ impl AutoResearcher {
             config,
             log_gen: true,
             prefix: "[AutoResearcher]".to_string(),
+            history: Vec::new(),
         }
     }
 
@@ -34,6 +36,18 @@ impl AutoResearcher {
 
     pub fn get_active_rules() -> Vec<String> {
         get_theory_archive().lock().unwrap().clone()
+    }
+
+    pub fn get_history_deltas(&self) -> Vec<f32> {
+        let mut deltas = Vec::new();
+        if self.history.len() < 2 {
+            return deltas;
+        }
+        for i in 1..self.history.len() {
+            let delta = self.history[i] as f32 - self.history[i - 1] as f32;
+            deltas.push(delta);
+        }
+        deltas
     }
 }
 
@@ -71,14 +85,15 @@ impl FunnelObserver for AutoResearcher {
         &mut self,
         generation: u64,
         global_iters: u64,
-        _best_fitness: (u32, u32),
+        best_fitness: (u32, u32),
         total_found: usize,
     ) {
-        if self.log_gen {
-            self.on_step(&format!(
-                "Gen {} Complete. Iters: {}, Found: {}",
-                generation, global_iters, total_found
-            ));
+        self.history.push(best_fitness.0);
+        if self.log_gen && generation % 10 == 0 {
+            println!(
+                "{} Gen: {} | Iters: {} | Best: {} | Pop: {}",
+                self.prefix, generation, global_iters, best_fitness.0, total_found
+            );
         }
     }
 

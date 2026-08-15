@@ -1,15 +1,22 @@
 pub mod assembly_funnel;
 pub mod auto_research;
 pub mod chaos_runner;
+pub mod chaos_swarm;
 pub mod chaos_state;
 pub mod coevolution_context;
 pub mod crucible;
 pub mod discrete_diffusion;
+pub mod dynamic_laws;
 pub mod emergent_objective;
 pub mod enlighten_engine;
 pub mod math_objective;
 pub mod motif_tree;
 pub mod oracle;
+pub mod fft;
+pub mod flu;
+pub mod robotics;
+pub mod photonics;
+pub mod multidomain_fuzz;
 pub mod universal_objective;
 
 pub use assembly_funnel::{AssemblyFunnel, FunnelObserver};

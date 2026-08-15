@@ -1,6 +1,7 @@
 pub mod arranger;
 pub mod composer;
 pub mod dsp;
+pub mod fm_synth;
 pub mod macro_arranger;
 pub mod melody;
 pub mod midi;

@@ -48,6 +48,8 @@ use visual::exporter::SvgExporter;
 #[tokio::main]
 async fn main() {
     println!("🚀 Starting SEARU Autonomous Aesthetic Entity on http://localhost:3000");
+    println!("📜 [Agentic Autopoiesis] Injected Physics Laws Loaded:");
+    println!("   -> {}", crate::science::dynamic_laws::get_injected_laws());
 
     tokio::spawn(autonomous_pulse());
 
@@ -59,6 +61,7 @@ async fn main() {
         .nest_service("/", ServeDir::new("public"))
         .route("/api/music/bach", get(api_music_bach).post(api_music_bach_post))
         .route("/api/music/generate", post(api_music_generate))
+        .route("/api/music/fm", get(api_music_fm))
         .route("/api/visual/art", get(api_visual_art).post(api_visual_art_post))
         .route("/api/mechanics/truss", get(api_mechanics_truss).post(api_mechanics_truss))
         .route("/api/materials/match", get(api_materials_match).post(api_materials_match_post))
@@ -68,6 +71,7 @@ async fn main() {
         .route("/api/typography/glyph", get(api_typography_glyph).post(api_typography_glyph))
         .route("/api/procedural_animation/curve", get(api_anim_curve).post(api_anim_curve))
         .route("/api/megacity/pipeline", post(api_megacity_pipeline))
+        .route("/api/science/multidomain_fuzz", post(api_science_multidomain_fuzz))
         .route("/api/fractal/universe", get(api_fractal_universe).post(api_fractal_universe))
         .route("/api/album/release", get(api_album_release).post(api_album_release))
         .route("/api/album/tracks", get(api_album_tracks))
@@ -101,6 +105,38 @@ async fn fallback() -> impl IntoResponse {
     )
 }
 
+#[derive(Serialize)]
+pub struct MultidomainResponse {
+    pub final_score: u32,
+    pub genes: [f64; 9],
+}
+
+async fn api_science_multidomain_fuzz() -> impl IntoResponse {
+    let objective = crate::science::multidomain_fuzz::MultiDomainFuzzObjective::new(25.0, 100.0, 0.5);
+    let config = crate::science::assembly_funnel::FunnelConfig {
+        tier1_population: 1000,
+        tier2_retention_ratio: 0.1,
+        tier3_dfs_depth: 2,
+        stagnation_patience: 10,
+        stagnation_delta: 0.5,
+        rng_seed: 42,
+        min_slope_window: 0,
+        min_slope_threshold: 0.0,
+        hard_limit_gen: 500,
+        hard_limit_score: 0,
+        use_diffusion: true,
+    };
+    
+    let (result, best_candidate) = crate::science::chaos_runner::ChaosRunner::launch_tunable(objective, config, "Multi-Domain Co-evolution");
+    
+    let best_genes = best_candidate.unwrap_or([0.0; 9]);
+    
+    Json(MultidomainResponse {
+        final_score: result.best_score(),
+        genes: best_genes,
+    })
+}
+
 async fn api_music_bach() -> impl IntoResponse {
     let sample_rate = 44100;
     let bach_audio_buffer =
@@ -121,6 +157,16 @@ async fn api_music_bach_post(
     let bach_audio_buffer =
         SearuApi::generate_bach_progression(&start_chord, num_chords, sec, sample_rate);
     let bytes = AudioExporter::encode_to_wav_bytes(&bach_audio_buffer, sample_rate).unwrap();
+    ([(header::CONTENT_TYPE, "audio/wav")], bytes)
+}
+
+async fn api_music_fm(
+    axum::extract::Query(query): axum::extract::Query<api::FmRequest>,
+) -> impl IntoResponse {
+    let diss = query.dissonance.unwrap_or(0.5);
+    let patch = crate::music::fm_synth::FmOptimizer::optimize_patch(diss);
+    let buffer = crate::music::fm_synth::FmSynthesizer::render(&patch, 440.0, 2.0, 44100);
+    let bytes = AudioExporter::encode_to_wav_bytes(&buffer, 44100).unwrap();
     ([(header::CONTENT_TYPE, "audio/wav")], bytes)
 }
 
@@ -273,8 +319,6 @@ async fn autonomous_pulse() {
     use tokio::time::{sleep, Duration};
     use rand::Rng;
 
-    println!("🫀 [Autonomous Pulse] Daemon started. The entity is now dreaming.");
-    
     // Ensure the oracle is initialized and loaded from disk right away
     {
         drop(get_oracle().lock().unwrap());

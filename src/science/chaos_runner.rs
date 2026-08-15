@@ -56,7 +56,7 @@ impl ChaosRunner {
         objective: impl ScienceObjective<T>,
         config: FunnelConfig,
         description: &str,
-    ) -> crate::science::assembly_funnel::EvolutionResult {
+    ) -> (crate::science::assembly_funnel::EvolutionResult, Option<T>) {
         let config_ar = AutoResearchConfig {
             mode: "Dual".to_string(),
         };
@@ -64,7 +64,9 @@ impl ChaosRunner {
         println!("Igniting Tunable Chaos Engine... {}", description);
 
         let mut funnel = AssemblyFunnel::new(config);
-        funnel.run_evolution_loop(&objective, &mut observer)
+        let res = funnel.run_evolution_loop(&objective, &mut observer);
+        let best_t = funnel.archive.elites.iter().min_by_key(|e| e.0).map(|e| e.2.clone());
+        (res, best_t)
     }
 
     pub fn evaluate_nested<T: Clone + Send + Sync + 'static>(
@@ -91,7 +93,7 @@ impl ChaosRunner {
             hard_limit_score,
             use_diffusion: true,
         };
-        let result = Self::launch_tunable(objective, config, description);
+        let (result, _) = Self::launch_tunable(objective, config, description);
         result.best_score()
     }
 

@@ -82,12 +82,16 @@ const DOM = {
     
     // Domain action buttons
     btnGenMusic: document.getElementById('btnGenerateMusic'),
+    btnGenFm: document.getElementById('btnGenerateFm'),
+    fmDissonanceSlider: document.getElementById('fmDissonanceSlider'),
+    fmDissonanceVal: document.getElementById('fmDissonanceVal'),
     btnGenArch: document.getElementById('btnGenerateArch'),
     btnGenTruss: document.getElementById('btnGenerateTruss'),
     btnGenPcb: document.getElementById('btnGeneratePcb'),
     btnGenVisual: document.getElementById('btnGenerateVisual'),
     btnGenMegaCity: document.getElementById('btnGenerateMegaCity'),
     btnGenFractal: document.getElementById('btnGenerateFractal'),
+    btnGenFuzz: document.getElementById('btnGenerateFuzz'),
     btnTriggerAlbum: document.getElementById('btnTriggerAlbum'),
     albumCard: document.getElementById('albumTracklistCard'),
     albumTrackList: document.getElementById('albumTrackList'),
@@ -423,6 +427,18 @@ function bindSlider(sliderId, badgeId, formatter) {
     });
 }
 
+if (DOM.musicDissonanceSlider) {
+    DOM.musicDissonanceSlider.addEventListener('input', (e) => {
+        DOM.musicDissonanceVal.innerText = parseFloat(e.target.value).toFixed(1);
+    });
+}
+
+if (DOM.fmDissonanceSlider) {
+    DOM.fmDissonanceSlider.addEventListener('input', (e) => {
+        DOM.fmDissonanceVal.innerText = parseFloat(e.target.value).toFixed(2);
+    });
+}
+
 bindSlider('musicChordsSlider', 'musicChordsVal', v => `${v} Chords`);
 bindSlider('musicSecSlider', 'musicSecVal', v => `${parseFloat(v).toFixed(1)}s`);
 bindSlider('musicDissonanceSlider', 'musicDissonanceVal', v => parseFloat(v).toFixed(1));
@@ -491,6 +507,31 @@ async function generateBachAudio() {
     }
 }
 DOM.btnGenMusic.addEventListener('click', generateBachAudio);
+
+async function generateFmAudio() {
+    DOM.btnGenFm.disabled = true;
+    DOM.btnGenFm.innerText = 'SYNTHESIZING...';
+    log('Igniting The Crucible: Annealing FM parameters to target dissonance...', 'info');
+    
+    const diss = parseFloat(DOM.fmDissonanceSlider.value);
+    
+    try {
+        const res = await fetch(`/api/music/fm?dissonance=${diss}`, { method: 'GET' });
+        if (res.ok) {
+            const blob = await res.blob();
+            loadAndPlayAudioBlob(blob, `Dialectical FM Timbre`, `Target Dissonance: ${diss.toFixed(2)}`);
+            renderTelemetryChart();
+        } else {
+            log('Error generating FM audio.', 'err');
+        }
+    } catch (e) {
+        log(`Network error: ${e.message}`, 'err');
+    } finally {
+        DOM.btnGenFm.disabled = false;
+        DOM.btnGenFm.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg> SYNTHESIZE FM TIMBRE`;
+    }
+}
+DOM.btnGenFm.addEventListener('click', generateFmAudio);
 
 // 2. Architecture (Floorplan)
 DOM.btnGenArch.addEventListener('click', async () => {
@@ -666,12 +707,45 @@ DOM.btnGenFractal.addEventListener('click', async () => {
             displaySvg(svg, 'Fractal Universe Multiverse');
         }
     } catch (e) {
-        log(`Error: ${e.message}`, 'err');
+        log(`Network error: ${e.message}`, 'err');
     } finally {
         DOM.btnGenFractal.disabled = false;
         DOM.btnGenFractal.innerText = 'EXPAND FRACTAL UNIVERSE';
     }
 });
+
+// 9. Multi-Domain Fuzzing
+if (DOM.btnGenFuzz) {
+    DOM.btnGenFuzz.addEventListener('click', async () => {
+        DOM.btnGenFuzz.disabled = true;
+        DOM.btnGenFuzz.innerText = 'IGNITING MULTI-DOMAIN FUZZING...';
+        log('Initializing Navier-Stokes Fluid + Kinematics + Silicon Photonics...', 'info');
+        log('Applying Heat vs Viscosity / Vibration vs Optical Radius cross-penalties.', 'sys');
+
+        try {
+            const res = await fetch('/api/science/multidomain_fuzz', {
+                method: 'POST',
+            });
+            if (res.ok) {
+                const data = await res.json();
+                log(`Fuzzing Optimization Complete. Best Score: ${data.final_score}`, 'success');
+                log(`Final Genes [9D]:`, 'info');
+                log(`  Fluid (Vorticity, Pressure, Viscosity, Strain): ${data.genes.slice(0,4).map(v => v.toFixed(3)).join(', ')}`, 'sys');
+                log(`  Kinematics (Stiffness, Damping, Freq): ${data.genes.slice(4,7).map(v => v.toFixed(3)).join(', ')}`, 'sys');
+                log(`  Photonics (Radius, Power): ${data.genes.slice(7,9).map(v => v.toFixed(3)).join(', ')}`, 'sys');
+                renderTelemetryChart();
+            } else {
+                log('Error optimizing multi-domain fuzzing.', 'err');
+            }
+        } catch (e) {
+            log(`Network error: ${e.message}`, 'err');
+        } finally {
+            DOM.btnGenFuzz.disabled = false;
+            DOM.btnGenFuzz.innerText = 'IGNITE MULTI-DOMAIN FUZZING';
+        }
+    });
+}
+
 
 // 8. Album Release & Catalog
 DOM.btnTriggerAlbum.addEventListener('click', async () => {

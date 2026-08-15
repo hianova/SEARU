@@ -54,7 +54,7 @@ impl EvolutionResult {
     }
 }
 
-/// Configuration for the 3-Tier Assembly Funnel
+#[derive(Clone)]
 pub struct FunnelConfig {
     pub tier1_population: usize,
     pub tier2_retention_ratio: f32, // e.g. 0.2 for top 20%

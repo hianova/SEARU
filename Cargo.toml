@@ -17,6 +17,7 @@ midly = "0.5.3"
 tokio-stream = { version = "0.1.19", features = ["sync"] }
 futures = "0.3.34"
 vec101 = { path = "src/vec101" }
+covopt-macro = { path = "../covopt-analyzer/covopt-macro" }
 
 [workspace]
 members = [

@@ -77,6 +77,10 @@
                 <span class="tab-icon">💿</span>
                 <span class="tab-label">Album Release</span>
             </button>
+            <button class="tab-btn" data-domain="fuzz">
+                <span class="tab-icon">🔥</span>
+                <span class="tab-label">Multi-Domain Fuzzing</span>
+            </button>
         </nav>
 
         <!-- Main Studio Body: 3-Column Layout -->
@@ -143,6 +147,20 @@
                                 <span class="val-badge" id="musicDissonanceVal">2.0</span>
                             </div>
                         </div>
+                        
+                        <div class="control-group">
+                            <label>Dialectical FM Dissonance (Order vs Chaos)</label>
+                            <div class="control-row">
+                                <input type="range" id="fmDissonanceSlider" min="0.0" max="1.0" step="0.05" value="0.0">
+                                <span class="val-badge" id="fmDissonanceVal">0.00</span>
+                            </div>
+                            <p class="description">0 = Pure Harmonic Ratios, 1 = Irrational Inharmonicity</p>
+                        </div>
+
+                        <button id="btnGenerateFm" class="btn btn-outline btn-block" style="margin-bottom: 10px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                            SYNTHESIZE FM TIMBRE
+                        </button>
 
                         <button id="btnGenerateMusic" class="btn btn-primary btn-block">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
@@ -277,6 +295,16 @@
                         </p>
                         <button id="btnGenerateFractal" class="btn btn-primary btn-block">
                             EXPAND FRACTAL UNIVERSE
+                        </button>
+                    </div>
+
+                    <!-- Form 9: Multi-Domain Fuzzing -->
+                    <div class="domain-form" id="form-fuzz">
+                        <p class="description">
+                            Co-evolves Navier-Stokes Fluid, Kinematics, and Silicon Photonics into a 9D hyper-stable structure by introducing brutal physical conflicts (Heat vs Viscosity, Vibration vs Waveguides).
+                        </p>
+                        <button id="btnGenerateFuzz" class="btn btn-primary btn-block">
+                            IGNITE MULTI-DOMAIN FUZZING
                         </button>
                     </div>
 

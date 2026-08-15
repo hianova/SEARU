@@ -33,6 +33,12 @@ pub struct VisualRequest {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+pub struct FmRequest {
+    pub dissonance: Option<f64>,
+}
+
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct MaterialRequest {
     pub target_r: f64,
     pub target_g: f64,
