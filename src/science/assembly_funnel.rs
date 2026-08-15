@@ -1,7 +1,7 @@
 #![allow(unused)]
 use crate::science::ScienceObjective;
 use crate::science::chaos_state::{
-    ChaosState, MicroTweak, RngState, StagnationFeedback, step_forward_nd,
+    ChaosState, DualChaosState, MicroTweak, RngState, StagnationFeedback, step_forward_nd,
 };
 use std::time::Instant;
 
@@ -189,12 +189,17 @@ impl<T: Clone + Send + Sync> AssemblyFunnel<T> {
         let mut global_best_candidate: Option<T> = None;
         let mut fitness_history: Vec<u32> = Vec::new();
 
-        let mut tweak = MicroTweak {
+        let mut micro_tweak = MicroTweak {
             s_exponent: 2.0, // Start with mild Zipf
             max_elements: 1000,
         };
+        let mut macro_tweak = MicroTweak {
+            s_exponent: 1.5,
+            max_elements: 10,
+        };
         let mut rng_state = RngState::new(self.config.rng_seed);
-        let mut chaos_state = ChaosState::<10, 1>::new([0.0]);
+        let mut chaos_state =
+            DualChaosState::<5, 2, 100, 1>::new([0.0, 0.0], [0.0], macro_tweak, micro_tweak);
 
         loop {
             if self.config.stagnation_patience == 0 {
@@ -363,7 +368,7 @@ impl<T: Clone + Send + Sync> AssemblyFunnel<T> {
 
                 for (i, (candidate, _)) in tier2_pool.iter().enumerate() {
                     global_iterations += 1;
-                    chaos_state = step_forward_nd(&chaos_state, &tweak, &mut rng_state);
+                    chaos_state.step(&mut rng_state);
 
                     let mutation_scale = if i < island_a_limit {
                         0.0001 // Island A (Top 10%): Strict 1-gate micro-mutation
@@ -490,7 +495,7 @@ impl<T: Clone + Send + Sync> AssemblyFunnel<T> {
                 counter: stagnation_counter,
                 patience: self.config.stagnation_patience,
             };
-            chaos_state.adapt_tweak(&mut tweak, &feedback);
+            chaos_state.adapt_tweak(&feedback);
 
             if stagnation_counter >= self.config.stagnation_patience {
                 let retention_count = (self.config.tier1_population as f32

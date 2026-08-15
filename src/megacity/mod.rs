@@ -20,7 +20,11 @@ impl MegaCityPipeline {
 
         // Step 3: Material Matching
         println!("[MegaPipeline] Phase 3: Matching PBR Materials...");
-        let mat = MaterialMatcher::match_material([profile.mechanics.target_r, profile.mechanics.target_g, profile.mechanics.target_b]);
+        let mat = MaterialMatcher::match_material([
+            profile.mechanics.target_r,
+            profile.mechanics.target_g,
+            profile.mechanics.target_b,
+        ]);
 
         // Step 4: Visual Generation
         println!("[MegaPipeline] Phase 4: Rendering Visuals...");
@@ -36,7 +40,10 @@ impl MegaCityPipeline {
 
         // Render Visual Art Background
         let svg_elements = crate::visual::exporter::SvgExporter::to_svg_elements(&visuals);
-        svg.push_str(&format!("<g opacity=\"0.15\" transform=\"scale(1.5)\">\n{}\n</g>\n", svg_elements));
+        svg.push_str(&format!(
+            "<g opacity=\"0.15\" transform=\"scale(1.5)\">\n{}\n</g>\n",
+            svg_elements
+        ));
 
         // Render Truss Mechanics
         for bar in truss.bars {

@@ -25,17 +25,18 @@ impl SearuApi {
     }
 
     pub fn generate_music_with_profile(profile: &crate::profile::ArtistProfile) -> Vec<f32> {
-        use crate::music::macro_arranger::MacroArranger;
         use crate::music::arranger::Arranger;
-        
+        use crate::music::macro_arranger::MacroArranger;
+
         let sample_rate = 44100;
         let bpm = 120.0;
         // Use the profile's phrase length for the loop
         let bars = profile.culture.phrase_length_bars;
         let seed_chord = [60.0, 64.0, 67.0]; // C Major
         let energy_curve = MacroArranger::evolve_energy_curve(bars);
-        
-        let (audio_data, _, _) = Arranger::compose_track(&seed_chord, bars, bpm, sample_rate, &energy_curve, profile);
+
+        let (audio_data, _, _) =
+            Arranger::compose_track(&seed_chord, bars, bpm, sample_rate, &energy_curve, profile);
         audio_data
     }
 
@@ -66,7 +67,12 @@ impl SearuApi {
     }
 
     pub fn generate_visual_art(num_shapes: usize, points_per_shape: usize) -> Vec<Shape> {
-        VisualComposer::generate_art(num_shapes, "API_Art", &[1.2], &crate::profile::VisualProfile::default())
+        VisualComposer::generate_art(
+            num_shapes,
+            "API_Art",
+            &[1.2],
+            &crate::profile::VisualProfile::default(),
+        )
     }
 
     pub fn optimize_mechanics_truss() -> Truss {

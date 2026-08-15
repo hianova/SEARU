@@ -6,8 +6,10 @@ pub mod coevolution_context;
 pub mod crucible;
 pub mod discrete_diffusion;
 pub mod emergent_objective;
+pub mod enlighten_engine;
 pub mod math_objective;
 pub mod motif_tree;
+pub mod oracle;
 
 pub use assembly_funnel::{AssemblyFunnel, FunnelObserver};
 pub use chaos_runner::ChaosRunner;

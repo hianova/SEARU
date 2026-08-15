@@ -1,11 +1,11 @@
+pub mod arranger;
 pub mod composer;
 pub mod dsp;
-pub mod theory;
-pub mod arranger;
 pub mod macro_arranger;
-pub mod timbre_evolver;
+pub mod melody;
+pub mod midi;
 pub mod mix_evolver;
 pub mod orchestrator;
 pub mod rhythm;
-pub mod melody;
-pub mod midi;
+pub mod theory;
+pub mod timbre_evolver;

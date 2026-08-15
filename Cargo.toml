@@ -15,3 +15,20 @@ rayon = "1.12.0"
 midly = "0.5.3"
 tokio-stream = { version = "0.1.19", features = ["sync"] }
 futures = "0.3.34"
+vec101 = { path = "src/vec101" }
+
+[workspace]
+members = [
+    ".",
+    "src/vec101",
+    "src/no_std_tool"
+]
+
+[workspace.dependencies]
+rand = "0.9.0"
+rayon = "1.12.0"
+heapless = "0.8"
+ahash = "0.8"
+hashbrown = "0.14"
+criterion = "0.5"
+no_std_tool = { path = "src/no_std_tool" }

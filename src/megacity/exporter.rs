@@ -1,6 +1,6 @@
 use crate::architecture::Room;
-use crate::mechanics::statics::Truss;
 use crate::materials::pbr::PbrMaterial;
+use crate::mechanics::statics::Truss;
 use serde::Serialize;
 use std::fs;
 use std::path::Path;

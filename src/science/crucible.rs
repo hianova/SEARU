@@ -1,9 +1,9 @@
 //! The generic Crucible for optimizing any parameter space via Monte Carlo Annealing.
 
+use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 use tokio::sync::broadcast;
-use serde::Serialize;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct CrucibleEvent {
@@ -26,7 +26,9 @@ pub struct TheCrucible;
 
 impl TheCrucible {
     fn compute_novelty(history: &[Vec<Gene>], candidate: &[Gene]) -> f64 {
-        if history.is_empty() { return 0.0; }
+        if history.is_empty() {
+            return 0.0;
+        }
         let mut total_distance = 0.0;
         for hist_state in history {
             let mut dist_sq = 0.0;
@@ -47,14 +49,18 @@ impl TheCrucible {
         let (fit, _, g) = Self::anneal_with_sublime(
             genes,
             |genes_slice| (evaluate(genes_slice), 0.0),
-            iterations
+            iterations,
         );
         (fit, g)
     }
 
     /// Takes a set of genes, an evaluation function returning (Primary Fitness, Sublime Metric),
     /// and optimizes them using Simulated Annealing with Aesthetic Epiphany.
-    pub fn anneal_with_sublime<F>(mut genes: Vec<Gene>, mut evaluate: F, iterations: usize) -> (f64, f64, Vec<Gene>)
+    pub fn anneal_with_sublime<F>(
+        mut genes: Vec<Gene>,
+        mut evaluate: F,
+        iterations: usize,
+    ) -> (f64, f64, Vec<Gene>)
     where
         F: FnMut(&[Gene]) -> (f64, f64),
     {
@@ -63,7 +69,16 @@ impl TheCrucible {
             iterations
         );
 
-        let initial_temp = 100.0_f64;
+        // Consult the Experience Oracle (ENLIGHTEN NeuroEvolution) for prior distribution
+        let (initial_temp, bounds_scale) = {
+            let mut oracle = crate::science::oracle::get_oracle().lock().unwrap();
+            let context = crate::science::oracle::DomainContext::Architecture {
+                height: 0.5,
+                stress: 0.5,
+            };
+            oracle.predict_prior(context)
+        };
+
         let final_temp = 0.001_f64;
         let cooling_rate = (final_temp / initial_temp).powf(1.0 / (iterations as f64));
 
@@ -74,7 +89,7 @@ impl TheCrucible {
 
         let mut current_temp = initial_temp;
         let tx = TELEMETRY_TX.get();
-        
+
         let mut history: Vec<Vec<Gene>> = Vec::new();
         history.push(genes.clone());
 
@@ -82,10 +97,10 @@ impl TheCrucible {
             let mut candidate_genes = genes.clone();
 
             // Perturb genes
-            for gene in &mut candidate_genes {
+            for gene in candidate_genes.iter_mut() {
+                // Apply bounds scaling predicted by LLM
                 let range = gene.bounds.1 - gene.bounds.0;
-                // Step size scales with temperature, but has a minimum bound
-                let max_step = range * (current_temp / initial_temp).max(0.05);
+                let max_step = range * (current_temp / initial_temp).max(0.05) * bounds_scale;
                 let step = (rand::random::<f64>() - 0.5) * max_step;
                 gene.current_value =
                     (gene.current_value + step).clamp(gene.bounds.0, gene.bounds.1);
@@ -102,11 +117,14 @@ impl TheCrucible {
                 let novelty_threshold = 0.3; // Lowered slightly since Sublime is doing the heavy lifting
                 let sublime_threshold = 0.8; // Must be highly symmetrical/elegant
 
-                if novelty > novelty_threshold && candidate_sublime > sublime_threshold && rand::random::<f64>() < 0.10 {
+                if novelty > novelty_threshold
+                    && candidate_sublime > sublime_threshold
+                    && rand::random::<f64>() < 0.10
+                {
                     is_epiphany = true;
                     // Re-heat the crucible to explore this novel region!
                     current_temp = (current_temp * 5.0).min(initial_temp);
-                    
+
                     genes = candidate_genes.clone();
                     current_fitness = candidate_fitness;
                     current_sublime = candidate_sublime;
@@ -139,14 +157,16 @@ impl TheCrucible {
                     }
                 }
             }
-            
+
             if accepted {
                 history.push(genes.clone());
-                if history.len() > 10 { history.remove(0); } // Keep context window size at 10
+                if history.len() > 10 {
+                    history.remove(0);
+                } // Keep context window size at 10
             }
 
             current_temp *= cooling_rate;
-            
+
             // Dispatch telemetry every 10 iterations (or instantly if epiphany)
             if i % 10 == 0 || is_epiphany {
                 if let Some(sender) = tx {
@@ -158,6 +178,13 @@ impl TheCrucible {
                     });
                 }
             }
+        }
+
+        // Feedback Loop: Send the best results back to ENLIGHTEN to evolve the Neural Network
+        let is_epiphany = best_sublime > 0.8 && best_fitness > 0.8;
+        {
+            let mut oracle = crate::science::oracle::get_oracle().lock().unwrap();
+            oracle.learn(best_fitness, is_epiphany);
         }
 
         (best_fitness, best_sublime, best_genes)

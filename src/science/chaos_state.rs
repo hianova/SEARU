@@ -43,6 +43,7 @@ impl RngState {
 }
 
 /// Tweakable parameters adjusting the micro-randomness of the system.
+#[derive(Clone)]
 pub struct MicroTweak {
     pub s_exponent: f32,
     pub max_elements: u32,
@@ -188,6 +189,74 @@ where
     ChaosState {
         macro_weights: next_weights,
         base_values: next_bases,
+    }
+}
+
+/// A two-tier ChaosState to solve the Curse of Dimensionality (State Explosion).
+/// - Macro Layer controls low-dimensional topology/style.
+/// - Micro Layer controls high-dimensional node coordinates/details.
+#[derive(Clone)]
+pub struct DualChaosState<
+    const MACRO_N: usize,
+    const MACRO_D: usize,
+    const MICRO_N: usize,
+    const MICRO_D: usize,
+> {
+    pub macro_state: ChaosState<MACRO_N, MACRO_D>,
+    pub micro_state: ChaosState<MICRO_N, MICRO_D>,
+    pub macro_tweak: MicroTweak,
+    pub micro_tweak: MicroTweak,
+}
+
+impl<const MACRO_N: usize, const MACRO_D: usize, const MICRO_N: usize, const MICRO_D: usize>
+    DualChaosState<MACRO_N, MACRO_D, MICRO_N, MICRO_D>
+{
+    pub fn new(
+        macro_init: [f32; MACRO_D],
+        micro_init: [f32; MICRO_D],
+        macro_tweak: MicroTweak,
+        micro_tweak: MicroTweak,
+    ) -> Self {
+        Self {
+            macro_state: ChaosState::new(macro_init),
+            micro_state: ChaosState::new(micro_init),
+            macro_tweak,
+            micro_tweak,
+        }
+    }
+
+    /// Progresses the dual-layer chaos state.
+    /// If the macro layer experiences a "Black Swan" (massive topological shift),
+    /// the micro layer is heavily mutated or reset to explore the new macro manifold.
+    pub fn step(&mut self, rng: &mut RngState) {
+        let mut macro_black_swan = false;
+
+        self.macro_state =
+            step_forward_nd_with_hook(&self.macro_state, &self.macro_tweak, rng, |_, impact| {
+                if impact.abs() > 5.0 {
+                    macro_black_swan = true;
+                }
+            });
+
+        if macro_black_swan {
+            // Massive shock: Reset micro state weights to uniform and perturb heavily
+            let mut reset_micro_init = [0.0; MICRO_D];
+            for val in &mut reset_micro_init {
+                *val = (rng.next_f32() * 20.0) - 10.0;
+            }
+            self.micro_state = ChaosState::new(reset_micro_init);
+        } else {
+            // Stable manifold: Fine-tune micro state
+            self.micro_state = step_forward_nd(&self.micro_state, &self.micro_tweak, rng);
+        }
+    }
+
+    /// Adapts the tweak parameters of both layers based on external stagnation feedback.
+    pub fn adapt_tweak(&mut self, feedback: &impl StagnationFeedback) {
+        self.macro_state
+            .adapt_tweak(&mut self.macro_tweak, feedback);
+        self.micro_state
+            .adapt_tweak(&mut self.micro_tweak, feedback);
     }
 }
 

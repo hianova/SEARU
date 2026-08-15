@@ -54,7 +54,13 @@ pub struct FMSynth;
 impl FMSynth {
     /// Renders an FM synthesized note.
     /// Modulator acts on the carrier frequency.
-    pub fn render_note(midi_note: f64, seconds: f32, sample_rate: u32, mod_index: f32, mod_ratio: f32) -> Vec<f32> {
+    pub fn render_note(
+        midi_note: f64,
+        seconds: f32,
+        sample_rate: u32,
+        mod_index: f32,
+        mod_ratio: f32,
+    ) -> Vec<f32> {
         let total_samples = (seconds * sample_rate as f32) as usize;
         let mut buffer = vec![0.0; total_samples];
         let freq = Note::new(midi_note).to_freq() as f32;
@@ -93,7 +99,7 @@ impl DrumMachine {
     pub fn kick(seconds: f32, sample_rate: u32) -> Vec<f32> {
         let total_samples = (seconds * sample_rate as f32) as usize;
         let mut buffer = vec![0.0; total_samples];
-        
+
         let start_freq = 150.0;
         let end_freq = 40.0;
         let decay_samples = (0.2 * sample_rate as f32) as usize; // short decay for kick
@@ -106,12 +112,12 @@ impl DrumMachine {
             } else {
                 envelope = 1.0 - (i as f32 / decay_samples as f32);
             }
-            
+
             // Exponential pitch sweep
             let ratio: f32 = end_freq / start_freq;
             let current_freq = start_freq * ratio.powf(i as f32 / decay_samples as f32);
             phase += 2.0 * PI * current_freq / sample_rate as f32;
-            
+
             buffer[i] = phase.sin() * envelope * 0.9;
         }
         buffer
@@ -127,7 +133,7 @@ impl DrumMachine {
         let rc = 1.0 / (2.0 * PI * cutoff_freq);
         let dt = 1.0 / sample_rate as f32;
         let alpha = rc / (rc + dt);
-        
+
         let mut prev_input = 0.0;
         let mut prev_output = 0.0;
 
@@ -136,16 +142,16 @@ impl DrumMachine {
             if i < decay_samples {
                 // Exponential decay sounds more natural for percussion than linear
                 let t = i as f32 / decay_samples as f32;
-                envelope = (1.0 - t).powf(2.0); 
+                envelope = (1.0 - t).powf(2.0);
             }
             // Pseudo-random noise for hihat
             let noise: f32 = (rand::random::<f32>() * 2.0) - 1.0;
-            
+
             // Apply High Pass Filter
             let filtered_noise = alpha * (prev_output + noise - prev_input);
             prev_input = noise;
             prev_output = filtered_noise;
-            
+
             // Output normal amplitude instead of boosting it.
             buffer[i] = filtered_noise * envelope * 0.4;
         }

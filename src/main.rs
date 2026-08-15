@@ -1,6 +1,7 @@
 #![allow(unused)]
 #![allow(dead_code)]
 
+mod album;
 mod api;
 mod architecture;
 mod fractal;
@@ -10,23 +11,27 @@ mod megacity;
 mod music;
 mod pcb_routing;
 mod procedural_animation;
+pub mod profile;
 mod science;
 mod typography;
 mod ui_layout;
 mod visual;
-mod album;
-pub mod profile;
 
-use axum::{Json, Router, http::header, response::IntoResponse, routing::{get, post}};
+use axum::response::sse::{Event, Sse};
+use axum::{
+    Json, Router,
+    http::header,
+    response::IntoResponse,
+    routing::{get, post},
+};
+use futures::stream::Stream;
 use serde::Serialize;
+use std::convert::Infallible;
 use std::net::SocketAddr;
+use tokio_stream::StreamExt;
+use tokio_stream::wrappers::BroadcastStream;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
-use axum::response::sse::{Event, Sse};
-use futures::stream::Stream;
-use tokio_stream::wrappers::BroadcastStream;
-use tokio_stream::StreamExt;
-use std::convert::Infallible;
 
 use api::SearuApi;
 use architecture::FloorPlanner;
@@ -72,14 +77,13 @@ async fn main() {
 async fn api_telemetry() -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let tx = crate::science::crucible::TELEMETRY_TX.get().unwrap();
     let rx = tx.subscribe();
-    
-    let stream = BroadcastStream::new(rx)
-        .filter_map(|msg| {
-            match msg {
-                Ok(event) => Some(Ok(Event::default().json_data(event).unwrap())),
-                Err(_) => None, // Ignore lag errors
-            }
-        });
+
+    let stream = BroadcastStream::new(rx).filter_map(|msg| {
+        match msg {
+            Ok(event) => Some(Ok(Event::default().json_data(event).unwrap())),
+            Err(_) => None, // Ignore lag errors
+        }
+    });
 
     Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::new())
 }
@@ -92,7 +96,9 @@ async fn api_music_bach() -> impl IntoResponse {
     ([(header::CONTENT_TYPE, "audio/wav")], bytes)
 }
 
-async fn api_music_generate(axum::Json(profile): axum::Json<crate::profile::ArtistProfile>) -> impl IntoResponse {
+async fn api_music_generate(
+    axum::Json(profile): axum::Json<crate::profile::ArtistProfile>,
+) -> impl IntoResponse {
     let sample_rate = 44100;
     let audio_buffer = SearuApi::generate_music_with_profile(&profile);
     let bytes = AudioExporter::encode_to_wav_bytes(&audio_buffer, sample_rate).unwrap();
@@ -155,7 +161,9 @@ async fn api_anim_curve() -> impl IntoResponse {
     Json(SearuApi::optimize_animation_transition())
 }
 
-async fn api_megacity_pipeline(axum::Json(profile): axum::Json<crate::profile::MegaCityProfile>) -> impl IntoResponse {
+async fn api_megacity_pipeline(
+    axum::Json(profile): axum::Json<crate::profile::MegaCityProfile>,
+) -> impl IntoResponse {
     let svg_str = MegaCityPipeline::run_pipeline(profile);
     ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
 }
@@ -169,5 +177,7 @@ async fn api_album_release() -> impl IntoResponse {
     std::thread::spawn(|| {
         album::AlbumProducer::release_album(10);
     });
-    Json(serde_json::json!({"status": "Parallel Album production (10 tracks) started! Check the /release directory in a few seconds."}))
+    Json(
+        serde_json::json!({"status": "Parallel Album production (10 tracks) started! Check the /release directory in a few seconds."}),
+    )
 }

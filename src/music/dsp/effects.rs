@@ -18,7 +18,7 @@ impl CombFilter {
             store: 0.0,
         }
     }
-    
+
     fn process(&mut self, input: f32) -> f32 {
         let output = self.buffer[self.pos];
         // Low-pass filter for damping high frequencies over time
@@ -43,7 +43,7 @@ impl AllPassFilter {
             feedback,
         }
     }
-    
+
     fn process(&mut self, input: f32) -> f32 {
         let delayed = self.buffer[self.pos];
         let output = -input + delayed;
@@ -62,30 +62,36 @@ impl Effects {
         // Prime numbers to ensure chaotic diffusion without resonant buildup
         let fcf_delays = [1557, 1613, 1493, 1231, 1063, 1151, 877, 971];
         let apf_delays = [223, 557, 347, 113];
-        
+
         let feedback = (room_size.clamp(0.0, 1.0) * 0.28) + 0.7; // 0.7 to 0.98
-        
-        let mut combs: Vec<CombFilter> = fcf_delays.iter().map(|&d| CombFilter::new(d, feedback, damping)).collect();
-        let mut allpasses: Vec<AllPassFilter> = apf_delays.iter().map(|&d| AllPassFilter::new(d, 0.5)).collect();
+
+        let mut combs: Vec<CombFilter> = fcf_delays
+            .iter()
+            .map(|&d| CombFilter::new(d, feedback, damping))
+            .collect();
+        let mut allpasses: Vec<AllPassFilter> = apf_delays
+            .iter()
+            .map(|&d| AllPassFilter::new(d, 0.5))
+            .collect();
 
         let mut output = vec![0.0; input.len()];
 
         for (i, &sample) in input.iter().enumerate() {
             let mut reverb_signal = 0.0;
-            
+
             // Parallel Comb Filters (Room Resonances)
             for comb in combs.iter_mut() {
                 reverb_signal += comb.process(sample);
             }
-            
+
             // Series All-Pass Filters (Chaotic Diffusion)
             for apf in allpasses.iter_mut() {
                 reverb_signal = apf.process(reverb_signal);
             }
-            
+
             output[i] = (sample * (1.0 - mix) + reverb_signal * mix * 0.15).clamp(-1.0, 1.0);
         }
-        
+
         output
     }
 

@@ -1,5 +1,5 @@
-use crate::science::crucible::{Gene, TheCrucible};
 use crate::music::dsp::evo_synth::TimbreProfile;
+use crate::science::crucible::{Gene, TheCrucible};
 
 #[derive(Clone, Debug)]
 pub struct MixProfile {
@@ -32,7 +32,10 @@ impl MixEvolver {
     }
 
     /// Evaluates the approximate perceived frequency distribution of a TimbreProfile
-    fn evaluate_timbre_energy(profile: &TimbreProfile, root_freq_multiplier: f64) -> (f64, f64, f64) {
+    fn evaluate_timbre_energy(
+        profile: &TimbreProfile,
+        root_freq_multiplier: f64,
+    ) -> (f64, f64, f64) {
         let mut low = 0.0;
         let mut mid = 0.0;
         let mut high = 0.0;
@@ -77,19 +80,43 @@ impl MixEvolver {
         let kick_low = 1.0 * Self::a_weight(80.0); // Kick has very low physical frequency
         let kick_mid = 0.1 * Self::a_weight(500.0);
         let kick_high = 0.0;
-        
+
         let hat_low = 0.0;
         let hat_mid = 0.1 * Self::a_weight(1000.0);
         let hat_high = 1.0 * Self::a_weight(4000.0); // MASSIVELY penalized by human ear
 
         // REVERTED to completely free bounds (0.001 to 1.5). Let the physics handle the limitation!
         let mut genes = vec![
-            Gene { name: "vol_bass".to_string(), bounds: (0.001, 1.5), current_value: 0.5 },
-            Gene { name: "vol_pad".to_string(), bounds: (0.001, 1.5), current_value: 0.4 },
-            Gene { name: "vol_arp".to_string(), bounds: (0.001, 1.5), current_value: 0.4 },
-            Gene { name: "vol_lead".to_string(), bounds: (0.001, 1.5), current_value: 0.6 },
-            Gene { name: "vol_kick".to_string(), bounds: (0.001, 1.5), current_value: 0.8 },
-            Gene { name: "vol_hat".to_string(), bounds: (0.001, 1.5), current_value: 0.4 },
+            Gene {
+                name: "vol_bass".to_string(),
+                bounds: (0.001, 1.5),
+                current_value: 0.5,
+            },
+            Gene {
+                name: "vol_pad".to_string(),
+                bounds: (0.001, 1.5),
+                current_value: 0.4,
+            },
+            Gene {
+                name: "vol_arp".to_string(),
+                bounds: (0.001, 1.5),
+                current_value: 0.4,
+            },
+            Gene {
+                name: "vol_lead".to_string(),
+                bounds: (0.001, 1.5),
+                current_value: 0.6,
+            },
+            Gene {
+                name: "vol_kick".to_string(),
+                bounds: (0.001, 1.5),
+                current_value: 0.8,
+            },
+            Gene {
+                name: "vol_hat".to_string(),
+                bounds: (0.001, 1.5),
+                current_value: 0.4,
+            },
         ];
 
         let (_best_fitness, best_genes) = TheCrucible::anneal(
@@ -102,9 +129,24 @@ impl MixEvolver {
                 let v_kick = current_genes[4].current_value;
                 let v_hat = current_genes[5].current_value;
 
-                let total_low = (b_low * v_bass) + (p_low * v_pad) + (a_low * v_arp) + (l_low * v_lead) + (kick_low * v_kick) + (hat_low * v_hat);
-                let total_mid = (b_mid * v_bass) + (p_mid * v_pad) + (a_mid * v_arp) + (l_mid * v_lead) + (kick_mid * v_kick) + (hat_mid * v_hat);
-                let total_high = (b_high * v_bass) + (p_high * v_pad) + (a_high * v_arp) + (l_high * v_lead) + (kick_high * v_kick) + (hat_high * v_hat);
+                let total_low = (b_low * v_bass)
+                    + (p_low * v_pad)
+                    + (a_low * v_arp)
+                    + (l_low * v_lead)
+                    + (kick_low * v_kick)
+                    + (hat_low * v_hat);
+                let total_mid = (b_mid * v_bass)
+                    + (p_mid * v_pad)
+                    + (a_mid * v_arp)
+                    + (l_mid * v_lead)
+                    + (kick_mid * v_kick)
+                    + (hat_mid * v_hat);
+                let total_high = (b_high * v_bass)
+                    + (p_high * v_pad)
+                    + (a_high * v_arp)
+                    + (l_high * v_lead)
+                    + (kick_high * v_kick)
+                    + (hat_high * v_hat);
 
                 let total_energy = total_low + total_mid + total_high;
 
@@ -126,7 +168,7 @@ impl MixEvolver {
                 penalty += (low_ratio - ideal_low).abs() * 50.0;
                 penalty += (mid_ratio - ideal_mid).abs() * 50.0;
                 penalty += (high_ratio - ideal_high).abs() * 50.0;
-                
+
                 // 3. Masking penalty (Kick and Bass should not overpower each other excessively)
                 let kick_energy = kick_low * v_kick;
                 let bass_energy = b_low * v_bass;
@@ -138,7 +180,7 @@ impl MixEvolver {
 
                 penalty
             },
-            2000 // Fast mixing anneal
+            2000, // Fast mixing anneal
         );
 
         MixProfile {

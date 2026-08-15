@@ -137,7 +137,12 @@ impl FractalEngine {
             }
             3 => {
                 // Depth 3: Visual Art (Mapped perfectly inside the circular Pad)
-                let visuals = VisualComposer::generate_art(depth + offset_x as usize, "Fractal", &[], &crate::profile::VisualProfile::default());
+                let visuals = VisualComposer::generate_art(
+                    depth + offset_x as usize,
+                    "Fractal",
+                    &[],
+                    &crate::profile::VisualProfile::default(),
+                );
                 let svg_elements = crate::visual::exporter::SvgExporter::to_svg_elements(&visuals);
                 out.push_str(&format!(
                     "  <svg x=\"{:.2}\" y=\"{:.2}\" width=\"{:.2}\" height=\"{:.2}\" viewBox=\"0 0 800 800\">\n{}\n  </svg>\n",

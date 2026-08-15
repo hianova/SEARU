@@ -105,23 +105,29 @@ impl CoEvolutionObjective<ArchCandidate, ArchEnvironment> for BuildingCoEvolutio
             *s = s.wrapping_mul(1664525).wrapping_add(1013904223);
             (*s % 1000) as f64 / 1000.0
         };
-        
+
         let mut rooms = Vec::new();
         let density = self.profile.density;
         let zoning = self.profile.zoning_ratio;
-        
+
         for i in 0..density {
             let is_commercial = rand(&mut seed) < zoning;
-            
+
             let name = if is_commercial {
-                if rand(&mut seed) > 0.5 { "Office" } else { "Shop" }
+                if rand(&mut seed) > 0.5 {
+                    "Office"
+                } else {
+                    "Shop"
+                }
             } else {
                 if rand(&mut seed) > 0.5 { "Bed" } else { "Bath" }
-            }.to_string() + &i.to_string();
-            
+            }
+            .to_string()
+                + &i.to_string();
+
             let base_size = if is_commercial { 80.0 } else { 30.0 };
             let var_size = if is_commercial { 150.0 } else { 70.0 };
-            
+
             rooms.push(Room {
                 name,
                 x: rand(&mut seed) * 400.0,
