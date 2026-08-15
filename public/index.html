@@ -3,166 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEARU - Universal Generative Engine</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <title>SEARU :: Algorithmic Music Generation</title>
+    <link rel="stylesheet" href="style.css?v=2">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="bg-blur"></div>
-    <div class="container">
+    <div class="app-container">
+        <!-- Header -->
         <header>
-            <h1>SEARU</h1>
-            <p>The Universal Generative Design Engine</p>
+            <div class="logo">SEARU <span class="subtitle">:: ALGORITHMIC MUSIC PLATFORM</span></div>
+            <div class="controls">
+                <button id="exportBtn" class="btn-primary">Export searu_profile.json</button>
+            </div>
         </header>
 
         <main class="dashboard">
-            <!-- Fractal Universe Card -->
-            <div class="card" id="card-fractal" style="grid-column: 1 / -1; min-height: 600px; border: 2px solid #8b5cf6;">
-                <div class="card-content">
-                    <h2>🌌 Fractal Recursive Engine (Infinite Zoom)</h2>
-                    <p>Scroll to Zoom In/Out. Drag to Pan. (Arch ➜ PCB ➜ UI ➜ Art)</p>
-                    <button onclick="generateFractal(this)">Generate Micro-Universe</button>
-                    <div class="result-area" style="min-height: 500px; overflow: hidden; position: relative;">
-                        <div class="loader"></div>
-                        <div class="svg-container hidden" id="fractal-container" style="width: 100%; height: 100%; cursor: grab;"></div>
+            <!-- Column 1: Cultural Biases -->
+            <section class="panel panel-left">
+                <h2>CULTURAL BIASES</h2>
+                <div class="panel-content">
+                    
+                    <div class="control-group">
+                        <label>Tuning System</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">12-TET</span>
+                            <input type="range" id="tuningScale" min="0" max="1" step="1" value="0">
+                            <span class="value-display" style="width:110px">Just Intonation</span>
+                        </div>
+                        <p class="description">Force mathematically perfect scales into western piano keys.</p>
                     </div>
-                </div>
-            </div>
 
-            <!-- MegaCity Pipeline Card -->
-            <div class="card" id="card-megacity" style="grid-column: 1 / -1; min-height: 500px;">
-                <div class="card-content">
-                    <h2>🏙️ MegaCity Pipeline</h2>
-                    <p>Architecture ➜ Mechanics ➜ Materials ➜ Visuals</p>
-                    <button onclick="generateMegaCity(this)">Ignite Mega-Pipeline</button>
-                    <div class="result-area" style="min-height: 400px;">
-                        <div class="loader"></div>
-                        <div class="svg-container hidden" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;"></div>
+                    <div class="control-group">
+                        <label>Phrase Structure (Bars)</label>
+                        <div class="control-row">
+                            <input type="range" id="phraseLength" min="3" max="9" step="1" value="4">
+                            <span class="value-display" id="phraseLengthVal" style="width: 60px; text-align:right">4 Bars</span>
+                        </div>
+                        <p class="description">Standard pop music uses 4-bar loops. Prime numbers feel asymmetric.</p>
                     </div>
-                </div>
-            </div>
 
-            <!-- Music Card -->
-            <div class="card" id="card-music">
-                <div class="card-content">
-                    <h2>🎵 Music Engine</h2>
-                    <p>Bach Counterpoint & Annealing</p>
-                    <button onclick="generateMusic(this)">Generate Progression</button>
-                    <div class="result-area">
-                        <div class="loader"></div>
-                        <audio controls class="hidden"></audio>
+                    <div class="control-group">
+                        <label>Rhythmic Grid</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:60px; text-align:right">4/4 EDM</span>
+                            <input type="range" id="rhythmicGrid" min="0" max="1" step="1" value="0">
+                            <span class="value-display" style="width:100px">Polyrhythmic</span>
+                        </div>
+                        <p class="description">Lock events to a 16-step grid or allow organic time subdivisions.</p>
                     </div>
-                </div>
-            </div>
 
-            <!-- Visual Card -->
-            <div class="card" id="card-visual">
-                <div class="card-content">
-                    <h2>🎨 Visual Engine</h2>
-                    <p>Generative SVG Art</p>
-                    <button onclick="runMegaCity()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded shadow-lg transition-colors mb-2">
-                    Start MegaCity
-                </button>
-                <button onclick="runAlbumRelease()" class="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-semibold py-2 px-4 rounded shadow-lg transition-colors">
-                    Produce EP Album (10 Tracks Parallel)
-                </button>
-                    <div class="result-area">
-                        <div class="loader"></div>
-                        <div class="svg-container hidden"></div>
-                    </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Mechanics Card -->
-            <div class="card" id="card-mechanics">
-                <div class="card-content">
-                    <h2>🏗️ Mechanics Engine</h2>
-                    <p>Topology Optimization (Truss)</p>
-                    <button onclick="generateMechanics(this)">Optimize Structure</button>
-                    <div class="result-area">
-                        <div class="loader"></div>
-                        <div class="svg-container hidden"></div>
+            <!-- Column 2: Physical Canvas -->
+            <section class="panel panel-main">
+                <h2>PHYSICAL CANVAS (THE CRUCIBLE)</h2>
+                <div class="panel-content grid-layout">
+                    
+                    <!-- Dials -->
+                    <div class="dials-container">
+                        <div class="dial-group">
+                            <div class="knob" id="tensionKnob">
+                                <div class="knob-indicator" id="tensionInd"></div>
+                            </div>
+                            <label>Dissonance Tolerance</label>
+                            <span class="value-display glow-text" id="tensionVal">2.0</span>
+                            <p class="description">Max target tension.</p>
+                        </div>
+                        
+                        <div class="dial-group">
+                            <div class="knob" id="fractalKnob">
+                                <div class="knob-indicator" id="fractalInd"></div>
+                            </div>
+                            <label>1/f Fractal Chaos</label>
+                            <span class="value-display glow-text" id="fractalVal">5.0</span>
+                            <p class="description">Strictness of leaps.</p>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Materials Card -->
-            <div class="card" id="card-materials">
-                <div class="card-content">
-                    <h2>🔮 Materials Engine</h2>
-                    <p>Inverse PBR Rendering</p>
-                    <button onclick="generateMaterials(this)">Match Material</button>
-                    <div class="result-area">
-                        <div class="loader"></div>
-                        <div class="json-container hidden"></div>
+                    <!-- Visualizers -->
+                    <div class="visualizer-container">
+                        <div class="vis-box">
+                            <h3>TENSION CURVE PREVIEW</h3>
+                            <canvas id="tensionCanvas" width="400" height="150"></canvas>
+                        </div>
+                        <div class="vis-box">
+                            <h3>SYSTEM CONSOLE</h3>
+                            <div class="console-output" id="consoleOutput">
+                                <p class="sys">> SEARU Engine v2.0 Initialized.</p>
+                                <p class="sys">> Awaiting parameter adjustments...</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            <!-- Architecture Card -->
-            <div class="card" id="card-arch">
-                <div class="card-content">
-                    <h2>🏛️ Architecture Engine</h2>
-                    <p>Floorplan Layout Optimization</p>
-                    <button onclick="generateArch(this)">Optimize Layout</button>
-                    <div class="result-area">
-                        <div class="loader"></div>
-                        <div class="svg-container hidden"></div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- UI Layout Card -->
-            <div class="card" id="card-ui">
-                <div class="card-content">
-                    <h2>🖥️ UI Layout Engine</h2>
-                    <p>Flexbox Constraint Gen</p>
-                    <button onclick="generateUi(this)">Generate Layout</button>
-                    <div class="result-area">
-                        <div class="loader"></div>
-                        <div class="json-container hidden"></div>
-                    </div>
                 </div>
-            </div>
+            </section>
+        </main>
 
-            <!-- PCB Routing Card -->
-            <div class="card" id="card-pcb">
-                <div class="card-content">
-                    <h2>🔌 PCB Routing Engine</h2>
-                    <p>Manhattan Distance Router</p>
-                    <button onclick="generatePcb(this)">Route Traces</button>
-                    <div class="result-area">
-                        <div class="loader"></div>
-                        <div class="svg-container hidden"></div>
+        <!-- New Section: Urban Planning -->
+        <main class="dashboard" style="margin-top: 20px;">
+            <section class="panel panel-left">
+                <h2>URBAN PLANNING</h2>
+                <div class="panel-content">
+                    
+                    <div class="control-group">
+                        <label>Population Density</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">Sparse</span>
+                            <input type="range" id="densitySlider" min="5" max="80" step="5" value="20">
+                            <span class="value-display" style="width:110px" id="densityVal">20 Rooms</span>
+                        </div>
+                        <p class="description">Number of rooms to generate.</p>
                     </div>
-                </div>
-            </div>
 
-            <!-- Typography Card -->
-            <div class="card" id="card-typo">
-                <div class="card-content">
-                    <h2>🔤 Typography Engine</h2>
-                    <p>Bezier Curve Glyph Gen</p>
-                    <button onclick="generateTypo(this)">Generate Glyph</button>
-                    <div class="result-area">
-                        <div class="loader"></div>
-                        <div class="svg-container hidden"></div>
+                    <div class="control-group">
+                        <label>Zoning Ratio</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">Res</span>
+                            <input type="range" id="zoningSlider" min="0.0" max="1.0" step="0.1" value="0.5">
+                            <span class="value-display" style="width:110px" id="zoningVal">50% Com</span>
+                        </div>
+                        <p class="description">Residential (small) vs Commercial (large).</p>
                     </div>
-                </div>
-            </div>
 
-            <!-- Animation Card -->
-            <div class="card" id="card-anim">
-                <div class="card-content">
-                    <h2>🎬 Animation Engine</h2>
-                    <p>Procedural Easing Curves</p>
-                    <button onclick="generateAnim(this)">Optimize Transition</button>
-                    <div class="result-area">
-                        <div class="loader"></div>
-                        <div class="json-container hidden"></div>
+                    <div class="control-group">
+                        <label>Environmental Stress (Wind)</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">Calm</span>
+                            <input type="range" id="windSlider" min="10" max="150" step="10" value="50">
+                            <span class="value-display" style="width:110px" id="windVal">50.0 F</span>
+                        </div>
+                        <p class="description">Forces buildings to become compact and defensive.</p>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Generative Length (Bars)</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">Short</span>
+                            <input type="range" id="barsSlider" min="2" max="16" step="2" value="4">
+                            <span class="value-display" style="width:110px" id="barsVal">4 Bars</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>BPM (Tempo)</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">Slow</span>
+                            <input type="range" id="bpmSlider" min="60" max="180" step="1" value="120">
+                            <span class="value-display" style="width:110px" id="bpmVal">120 BPM</span>
+                        </div>
+                    </div>
+
+                    <button id="genMusicBtn" class="btn-primary" style="width: 100%; margin-top: 20px; background-color: #f59e0b;">GENERATE & PLAY MUSIC</button>
+                    <audio id="musicPlayer" controls style="width: 100%; margin-top: 15px; display: none;"></audio>
+
+                    <div id="telemetryBox" style="display: none; margin-top: 20px; background: rgba(10, 10, 10, 0.8); padding: 15px; border-radius: 8px; border: 1px solid #1f2833;">
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #66fcf1; margin-bottom: 5px;">
+                            <span>THE CRUCIBLE (ANNEALING)</span>
+                            <span id="telemetryStatus">T: 100.0 | F: 0.00</span>
+                        </div>
+                        <canvas id="telemetryCanvas" width="300" height="80" style="width: 100%; height: 80px; border: 1px solid #1f2833; background: #0b0c10;"></canvas>
+                    </div>
+
+                    <h2 style="margin-top: 40px; margin-bottom: 15px;">URBAN PLANNING</h2>RT & MATERIALS</h2>
+
+                    <div class="control-group">
+                        <label>Fractal Tree Depth</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">Basic</span>
+                            <input type="range" id="fractalSlider" min="2" max="15" step="1" value="12">
+                            <span class="value-display" style="width:110px" id="fractalVal">Depth: 12</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Visual Base Hue</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">0°</span>
+                            <input type="range" id="hueSlider" min="0" max="360" step="1" value="200">
+                            <span class="value-display" style="width:110px" id="hueVal">200° (Blue)</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Material Target Color (R)</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">0</span>
+                            <input type="range" id="colorRSlider" min="0.0" max="1.0" step="0.1" value="0.2">
+                            <span class="value-display" style="width:110px" id="colorRVal">0.2</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Material Target Color (G)</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">0</span>
+                            <input type="range" id="colorGSlider" min="0.0" max="1.0" step="0.1" value="0.2">
+                            <span class="value-display" style="width:110px" id="colorGVal">0.2</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Material Target Color (B)</label>
+                        <div class="control-row">
+                            <span class="value-display" style="width:50px; text-align:right">0</span>
+                            <input type="range" id="colorBSlider" min="0.0" max="1.0" step="0.1" value="0.2">
+                            <span class="value-display" style="width:110px" id="colorBVal">0.2</span>
+                        </div>
+                    </div>
+
+                    <button id="genCityBtn" class="btn-primary" style="width: 100%; margin-top: 20px;">GENERATE MEGACITY</button>
+                    
+                    <div id="blenderInfo" style="display:none; margin-top: 15px; padding: 10px; background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6;">
+                        <span style="color: #60a5fa; font-size: 12px; font-weight: bold;">[INDUSTRY PIPELINE ACTIVE]</span><br>
+                        <span style="font-size: 11px; color: #94a3b8;">SEARU has exported the algorithmic data for 3D rendering. Run this command in your terminal to build the city in Blender:</span><br>
+                        <code style="color: #cbd5e1; font-size: 11px; background: #0f172a; padding: 4px; display: block; margin-top: 5px;">blender --background --python public/blender/build_megacity.py</code>
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <section class="panel panel-main">
+                <h2>MEGACITY RENDER (SVG)</h2>
+                <div class="panel-content" style="display: flex; justify-content: center; align-items: center; min-height: 400px; background: #0b0c10; border-radius: 4px;">
+                    <div id="citySvgContainer" style="width: 100%; height: 100%; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+                        <span style="color: #45a29e; font-family: 'JetBrains Mono', monospace;">No city generated yet.</span>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
+    
     <script src="app.js"></script>
 </body>
 </html>

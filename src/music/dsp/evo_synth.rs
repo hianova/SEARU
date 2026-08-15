@@ -53,10 +53,11 @@ impl EvolutionarySynth {
                 let dampening = if h == 0 { 
                     1.0 
                 } else { 
-                    // brightness = 1.0 -> minimal dampening
-                    // brightness = 0.0 -> massive high-freq dampening
-                    let cutoff = (brightness as f64).max(0.01);
-                    (1.0 - (h_f64 * 0.05 / cutoff)).clamp(0.0, 1.0)
+                    let cutoff = (brightness as f64).max(0.1);
+                    // A gentler exponent decay instead of a hard linear clip.
+                    // This preserves the mathematical 1/f structure but softens it at low energy,
+                    // rather than annihilating all harmonics and turning it into a whale sonar.
+                    cutoff.powf(h_f64 * 0.25)
                 };
 
                 let amplitude = profile.harmonics[h] * dampening;

@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct Node {
     pub x: f64,
     pub y: f64,
@@ -6,7 +6,7 @@ pub struct Node {
     pub force_y: f64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct Bar {
     pub node_a: usize,
     pub node_b: usize,
@@ -14,7 +14,7 @@ pub struct Bar {
     pub stress: f64, // calculated
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct Truss {
     pub nodes: Vec<Node>,
     pub bars: Vec<Bar>,

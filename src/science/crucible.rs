@@ -1,6 +1,19 @@
 //! The generic Crucible for optimizing any parameter space via Monte Carlo Annealing.
 
 use std::collections::HashMap;
+use std::sync::OnceLock;
+use tokio::sync::broadcast;
+use serde::Serialize;
+
+#[derive(Clone, Debug, Serialize)]
+pub struct CrucibleEvent {
+    pub iteration: usize,
+    pub temp: f64,
+    pub fitness: f64,
+    pub is_epiphany: bool,
+}
+
+pub static TELEMETRY_TX: OnceLock<broadcast::Sender<CrucibleEvent>> = OnceLock::new();
 
 #[derive(Clone, Debug)]
 pub struct Gene {
@@ -12,11 +25,38 @@ pub struct Gene {
 pub struct TheCrucible;
 
 impl TheCrucible {
-    /// Takes a set of genes, an evaluation function, and optimizes them
-    /// using Simulated Annealing.
-    pub fn anneal<F>(mut genes: Vec<Gene>, mut evaluate: F, iterations: usize) -> (f64, Vec<Gene>)
+    fn compute_novelty(history: &[Vec<Gene>], candidate: &[Gene]) -> f64 {
+        if history.is_empty() { return 0.0; }
+        let mut total_distance = 0.0;
+        for hist_state in history {
+            let mut dist_sq = 0.0;
+            for (g1, g2) in hist_state.iter().zip(candidate.iter()) {
+                let range = (g1.bounds.1 - g1.bounds.0).max(1e-6);
+                let norm_diff = (g1.current_value - g2.current_value) / range;
+                dist_sq += norm_diff.powi(2);
+            }
+            total_distance += dist_sq.sqrt();
+        }
+        total_distance / history.len() as f64
+    }
+
+    pub fn anneal<F>(genes: Vec<Gene>, mut evaluate: F, iterations: usize) -> (f64, Vec<Gene>)
     where
         F: FnMut(&[Gene]) -> f64,
+    {
+        let (fit, _, g) = Self::anneal_with_sublime(
+            genes,
+            |genes_slice| (evaluate(genes_slice), 0.0),
+            iterations
+        );
+        (fit, g)
+    }
+
+    /// Takes a set of genes, an evaluation function returning (Primary Fitness, Sublime Metric),
+    /// and optimizes them using Simulated Annealing with Aesthetic Epiphany.
+    pub fn anneal_with_sublime<F>(mut genes: Vec<Gene>, mut evaluate: F, iterations: usize) -> (f64, f64, Vec<Gene>)
+    where
+        F: FnMut(&[Gene]) -> (f64, f64),
     {
         println!(
             "🔥 The Crucible: Igniting Simulated Annealing for {} iterations...",
@@ -27,13 +67,18 @@ impl TheCrucible {
         let final_temp = 0.001_f64;
         let cooling_rate = (final_temp / initial_temp).powf(1.0 / (iterations as f64));
 
-        let mut current_fitness = evaluate(&genes);
+        let (mut current_fitness, mut current_sublime) = evaluate(&genes);
         let mut best_fitness = current_fitness;
+        let mut best_sublime = current_sublime;
         let mut best_genes = genes.clone();
 
         let mut current_temp = initial_temp;
+        let tx = TELEMETRY_TX.get();
+        
+        let mut history: Vec<Vec<Gene>> = Vec::new();
+        history.push(genes.clone());
 
-        for _ in 0..iterations {
+        for i in 0..iterations {
             let mut candidate_genes = genes.clone();
 
             // Perturb genes
@@ -46,30 +91,75 @@ impl TheCrucible {
                     (gene.current_value + step).clamp(gene.bounds.0, gene.bounds.1);
             }
 
-            let candidate_fitness = evaluate(&candidate_genes);
+            let (candidate_fitness, candidate_sublime) = evaluate(&candidate_genes);
+            let mut is_epiphany = false;
+            let mut accepted = false;
 
-            // Acceptance probability
-            if candidate_fitness < current_fitness {
-                genes = candidate_genes.clone();
-                current_fitness = candidate_fitness;
+            // 1. Check for Aesthetic Epiphany (Happy Accidents)
+            // Epiphany requires BOTH High Novelty AND High Sublime Metric!
+            if candidate_fitness > current_fitness {
+                let novelty = Self::compute_novelty(&history, &candidate_genes);
+                let novelty_threshold = 0.3; // Lowered slightly since Sublime is doing the heavy lifting
+                let sublime_threshold = 0.8; // Must be highly symmetrical/elegant
 
-                if current_fitness < best_fitness {
-                    best_fitness = current_fitness;
-                    best_genes = candidate_genes;
-                }
-            } else {
-                let diff = candidate_fitness - current_fitness;
-                // To avoid NaN/Infinity if diff is too large and temp is tiny
-                let acceptance_prob = (-diff / current_temp).exp();
-                if rand::random::<f64>() < acceptance_prob {
-                    genes = candidate_genes;
+                if novelty > novelty_threshold && candidate_sublime > sublime_threshold && rand::random::<f64>() < 0.10 {
+                    is_epiphany = true;
+                    // Re-heat the crucible to explore this novel region!
+                    current_temp = (current_temp * 5.0).min(initial_temp);
+                    
+                    genes = candidate_genes.clone();
                     current_fitness = candidate_fitness;
+                    current_sublime = candidate_sublime;
+                    accepted = true;
                 }
             }
 
+            // 2. Standard Acceptance
+            if !is_epiphany {
+                if candidate_fitness < current_fitness {
+                    genes = candidate_genes.clone();
+                    current_fitness = candidate_fitness;
+                    current_sublime = candidate_sublime;
+                    accepted = true;
+
+                    if current_fitness < best_fitness {
+                        best_fitness = current_fitness;
+                        best_sublime = current_sublime;
+                        best_genes = candidate_genes;
+                    }
+                } else {
+                    let diff = candidate_fitness - current_fitness;
+                    // To avoid NaN/Infinity if diff is too large and temp is tiny
+                    let acceptance_prob = (-diff / current_temp).exp();
+                    if rand::random::<f64>() < acceptance_prob {
+                        genes = candidate_genes;
+                        current_fitness = candidate_fitness;
+                        current_sublime = candidate_sublime;
+                        accepted = true;
+                    }
+                }
+            }
+            
+            if accepted {
+                history.push(genes.clone());
+                if history.len() > 10 { history.remove(0); } // Keep context window size at 10
+            }
+
             current_temp *= cooling_rate;
+            
+            // Dispatch telemetry every 10 iterations (or instantly if epiphany)
+            if i % 10 == 0 || is_epiphany {
+                if let Some(sender) = tx {
+                    let _ = sender.send(CrucibleEvent {
+                        iteration: i,
+                        temp: current_temp,
+                        fitness: current_fitness,
+                        is_epiphany,
+                    });
+                }
+            }
         }
 
-        (best_fitness, best_genes)
+        (best_fitness, best_sublime, best_genes)
     }
 }

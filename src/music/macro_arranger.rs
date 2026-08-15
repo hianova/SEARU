@@ -24,9 +24,9 @@ impl MacroArranger {
             |current_genes| {
                 let mut penalty = 0.0;
                 
-                // 1. Intro and Outro should be calm
-                penalty += current_genes[0].current_value * 50.0; // Intro penalty
-                penalty += current_genes[num_control_points - 1].current_value * 50.0; // Outro penalty
+                // 1. Intro and Outro should be calm but NOT completely silent (target 0.1)
+                penalty += (current_genes[0].current_value - 0.1).abs() * 50.0;
+                penalty += (current_genes[num_control_points - 1].current_value - 0.1).abs() * 50.0;
                 
                 // 2. Golden Ratio Climax Reward
                 // We want the peak energy to be right around 61.8% of the track.
@@ -59,9 +59,9 @@ impl MacroArranger {
                     penalty += (total_variation - 4.0) * 50.0;
                 }
                 
-                // 4. Require at least one moment of pure silence / breakdown
+                // 4. Require at least one moment of calm / breakdown (target 0.05, not 0.0)
                 let min_energy = current_genes.iter().map(|g| g.current_value).fold(f64::INFINITY, |a, b| a.min(b));
-                penalty += min_energy * 30.0;
+                penalty += (min_energy - 0.05).abs() * 30.0;
                 
                 penalty.max(0.0)
             },
@@ -83,8 +83,8 @@ impl MacroArranger {
             // Cubic easing smoothstep
             let smooth_frac = frac * frac * (3.0 - 2.0 * frac); 
             let interpolated = control_points[idx0] * (1.0 - smooth_frac) + control_points[idx1] * smooth_frac;
-            
-            final_curve.push(interpolated.clamp(0.0, 1.0));
+            // Clamp to 0.05 to prevent pure digital silence
+            final_curve.push(interpolated.clamp(0.05, 1.0));
         }
         
         println!("✅ Macro-Arranger: Energy Curve mapped to {} bars.", total_bars);

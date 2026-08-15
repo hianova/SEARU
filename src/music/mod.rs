@@ -5,3 +5,7 @@ pub mod arranger;
 pub mod macro_arranger;
 pub mod timbre_evolver;
 pub mod mix_evolver;
+pub mod orchestrator;
+pub mod rhythm;
+pub mod melody;
+pub mod midi;

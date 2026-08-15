@@ -3,13 +3,15 @@ use crate::materials::matcher::MaterialMatcher;
 use crate::mechanics::optimizer::MechanicsOptimizer;
 use crate::visual::composer::VisualComposer;
 
+pub mod exporter;
+
 pub struct MegaCityPipeline;
 
 impl MegaCityPipeline {
-    pub fn run_pipeline() -> String {
+    pub fn run_pipeline(profile: crate::profile::MegaCityProfile) -> String {
         // Step 1: Architecture Co-evolution
         println!("[MegaPipeline] Phase 1: Co-Evolving Architecture...");
-        let rooms = FloorPlanner::optimize_layout();
+        let rooms = FloorPlanner::optimize_layout(profile.arch);
 
         // Step 2: Mechanics Truss Generation
         // We use the center of the architecture as the base for the mechanics.
@@ -17,13 +19,15 @@ impl MegaCityPipeline {
         let truss = MechanicsOptimizer::optimize_truss();
 
         // Step 3: Material Matching
-        // E.g., matching a heavy duty material based on truss mass.
         println!("[MegaPipeline] Phase 3: Matching PBR Materials...");
-        let mat = MaterialMatcher::match_material([0.2, 0.2, 0.2], [0.8, 0.8, 0.8]);
+        let mat = MaterialMatcher::match_material([profile.mechanics.target_r, profile.mechanics.target_g, profile.mechanics.target_b]);
 
         // Step 4: Visual Generation
         println!("[MegaPipeline] Phase 4: Rendering Visuals...");
-        let visuals = VisualComposer::generate_art(20, "MegaCity", &[]);
+        let visuals = VisualComposer::generate_art(20, "MegaCity", &[], &profile.visual);
+
+        // --- NEW: BLENDER EXPORT ---
+        exporter::BlenderExporter::export_megacity(&rooms, &truss, &mat);
 
         // Combine all into a massive SVG
         let mut svg = String::new();

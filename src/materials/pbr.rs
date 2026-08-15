@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub struct PbrMaterial {
     pub albedo: [f64; 3], // R, G, B (0-1)
     pub roughness: f64,   // 0-1

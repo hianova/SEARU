@@ -37,7 +37,7 @@ impl FractalEngine {
         match depth {
             0 => {
                 // Depth 0: Architecture (0 to 500 mapped to scale_w, scale_h)
-                let rooms = FloorPlanner::optimize_layout();
+                let rooms = FloorPlanner::optimize_layout(crate::profile::ArchProfile::default());
                 for r in rooms {
                     let rx = offset_x + (r.x / 500.0) * scale_w;
                     let ry = offset_y + (r.y / 500.0) * scale_h;
@@ -137,7 +137,7 @@ impl FractalEngine {
             }
             3 => {
                 // Depth 3: Visual Art (Mapped perfectly inside the circular Pad)
-                let visuals = VisualComposer::generate_art(depth + offset_x as usize, "Fractal", &[]);
+                let visuals = VisualComposer::generate_art(depth + offset_x as usize, "Fractal", &[], &crate::profile::VisualProfile::default());
                 let svg_elements = crate::visual::exporter::SvgExporter::to_svg_elements(&visuals);
                 out.push_str(&format!(
                     "  <svg x=\"{:.2}\" y=\"{:.2}\" width=\"{:.2}\" height=\"{:.2}\" viewBox=\"0 0 800 800\">\n{}\n  </svg>\n",

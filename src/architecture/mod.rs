@@ -23,7 +23,9 @@ pub struct ArchEnvironment {
 
 pub struct FloorPlanner;
 
-struct BuildingCoEvolution;
+struct BuildingCoEvolution {
+    profile: crate::profile::ArchProfile,
+}
 
 impl CoEvolutionObjective<ArchCandidate, ArchEnvironment> for BuildingCoEvolution {
     fn evaluate_fitness(&self, candidate: &ArchCandidate, env: &ArchEnvironment) -> (u32, u32) {
@@ -85,12 +87,12 @@ impl CoEvolutionObjective<ArchCandidate, ArchEnvironment> for BuildingCoEvolutio
 
         let cand_fit = cost as u32;
 
-        // Environment wants to MAXIMIZE wind damage. So it minimizes (100000 - wind_damage)
-        // But the environment forces must be constrained to a budget (e.g. max total wind = 100)
+        // Environment wants to MAXIMIZE wind damage.
         let mut env_cost = 100000.0 - wind_damage;
         let total_wind = env.wind_force_x.abs() + env.wind_force_y.abs();
-        if total_wind > 100.0 {
-            env_cost += (total_wind - 100.0) * 1000.0; // Over budget penalty
+        let max_wind = self.profile.max_wind_force;
+        if total_wind > max_wind {
+            env_cost += (total_wind - max_wind) * 1000.0; // Over budget penalty
         }
 
         let env_fit = env_cost.max(0.0) as u32;
@@ -103,15 +105,29 @@ impl CoEvolutionObjective<ArchCandidate, ArchEnvironment> for BuildingCoEvolutio
             *s = s.wrapping_mul(1664525).wrapping_add(1013904223);
             (*s % 1000) as f64 / 1000.0
         };
-        let names = ["Living", "Kitchen", "Bed1", "Bed2", "Bath"];
+        
         let mut rooms = Vec::new();
-        for name in names {
+        let density = self.profile.density;
+        let zoning = self.profile.zoning_ratio;
+        
+        for i in 0..density {
+            let is_commercial = rand(&mut seed) < zoning;
+            
+            let name = if is_commercial {
+                if rand(&mut seed) > 0.5 { "Office" } else { "Shop" }
+            } else {
+                if rand(&mut seed) > 0.5 { "Bed" } else { "Bath" }
+            }.to_string() + &i.to_string();
+            
+            let base_size = if is_commercial { 80.0 } else { 30.0 };
+            let var_size = if is_commercial { 150.0 } else { 70.0 };
+            
             rooms.push(Room {
-                name: name.to_string(),
+                name,
                 x: rand(&mut seed) * 400.0,
                 y: rand(&mut seed) * 400.0,
-                w: 50.0 + rand(&mut seed) * 100.0,
-                h: 50.0 + rand(&mut seed) * 100.0,
+                w: base_size + rand(&mut seed) * var_size,
+                h: base_size + rand(&mut seed) * var_size,
             });
         }
         ArchCandidate { rooms }
@@ -171,12 +187,12 @@ impl CoEvolutionObjective<ArchCandidate, ArchEnvironment> for BuildingCoEvolutio
 }
 
 impl FloorPlanner {
-    pub fn optimize_layout() -> Vec<Room> {
+    pub fn optimize_layout(profile: crate::profile::ArchProfile) -> Vec<Room> {
         let runner = DualChaosRunner {
             max_generations: 50_000,
             nash_patience: 1000,
         };
-        let (best_candidate, _best_env) = runner.launch(BuildingCoEvolution);
+        let (best_candidate, _best_env) = runner.launch(BuildingCoEvolution { profile });
         best_candidate.rooms
     }
 

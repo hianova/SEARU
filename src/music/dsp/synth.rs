@@ -146,8 +146,8 @@ impl DrumMachine {
             prev_input = noise;
             prev_output = filtered_noise;
             
-            // Boost amplitude slightly since HPF removes a lot of energy
-            buffer[i] = filtered_noise * envelope * 1.5;
+            // Output normal amplitude instead of boosting it.
+            buffer[i] = filtered_noise * envelope * 0.4;
         }
         buffer
     }

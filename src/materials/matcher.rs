@@ -5,7 +5,7 @@ pub struct MaterialMatcher;
 
 impl MaterialMatcher {
     /// Finds the PBR parameters that best match a target spectral response
-    pub fn match_material(target_front_rgb: [f64; 3], target_edge_rgb: [f64; 3]) -> PbrMaterial {
+    pub fn match_material(target_rgb: [f64; 3]) -> PbrMaterial {
         println!("🔮 Materials Engine: Inverse Rendering to match target reflectance...");
 
         let genes = vec![
@@ -57,8 +57,8 @@ impl MaterialMatcher {
 
                 let mut cost = 0.0;
                 for i in 0..3 {
-                    cost += (sim_front[i] - target_front_rgb[i]).powi(2);
-                    cost += (sim_edge[i] - target_edge_rgb[i]).powi(2);
+                    cost += (sim_front[i] - target_rgb[i]).powi(2);
+                    cost += (sim_edge[i] - target_rgb[i]).powi(2);
                 }
                 cost
             },

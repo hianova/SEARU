@@ -1,163 +1,92 @@
 use super::geometry::{Color, Point, Shape, ShapeType};
-use crate::science::chaos_state::{ChaosState, MicroTweak, RngState, step_forward_nd};
 use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
-use std::f64::consts::PI;
 
 pub struct VisualComposer;
 
 impl VisualComposer {
-    pub fn generate_art(seed: usize, track_name: &str, cost_scores: &[f64]) -> Vec<Shape> {
-        println!("🎨 Visual Engine: Igniting Synesthesia Chaos for {}...", track_name);
+    fn draw_branch(shapes: &mut Vec<Shape>, rng: &mut StdRng, x: f64, y: f64, length: f64, angle: f64, depth: usize, hue_base: f64) {
+        if depth == 0 { return; }
+        
+        let x_end = x + length * angle.cos();
+        let y_end = y + length * angle.sin();
+        
+        let stroke_w = (depth as f64) * 0.8;
+        // The trunk (high depth) should be darker, the leaves (low depth) brighter
+        let depth_norm = depth as f64 / 12.0;
+        let lightness = 0.9 - depth_norm * 0.6;
+        let hue = (hue_base + (12.0 - depth as f64) * 10.0) % 360.0;
+        
+        shapes.push(Shape {
+            shape_type: ShapeType::Path(format!("M {:.2} {:.2} L {:.2} {:.2}", x, y, x_end, y_end)),
+            color: Color { h: hue, s: 0.8, l: lightness },
+            fill_opacity: 0.0,
+            stroke_color: Some(Color { h: hue, s: 0.8, l: lightness }),
+            stroke_width: stroke_w.max(0.5),
+        });
+        
+        // Randomize spread and length a bit for organic look
+        let spread1 = 0.35 + rng.random_range(-0.1..0.15);
+        let spread2 = 0.35 + rng.random_range(-0.1..0.15);
+        let length_factor = 0.75 + rng.random_range(-0.05..0.05);
+        
+        Self::draw_branch(shapes, rng, x_end, y_end, length * length_factor, angle - spread1, depth - 1, hue_base);
+        Self::draw_branch(shapes, rng, x_end, y_end, length * length_factor, angle + spread2, depth - 1, hue_base);
+    }
+
+    pub fn generate_art(seed: usize, track_name: &str, _cost_scores: &[f64], profile: &crate::profile::VisualProfile) -> Vec<Shape> {
+        println!("🌱 Visual Engine: Growing Fractal Tree for {}...", track_name);
         
         let mut rng_std = StdRng::seed_from_u64(seed as u64 + 777);
-        let hue_base = rng_std.random_range(0.0..360.0);
+        let hue_base = profile.base_hue;
         let mut shapes = Vec::new();
-        let num_symmetry = 6; // Hexagonal radial symmetry (Mandala effect)
 
-        // Reduced from 3 strands to 2 to prevent excessive center tangling
-        for i in 0..2 {
-            let strand_hue = (hue_base + (i as f64 * 60.0)) % 360.0;
-            
-            let mut chaos = ChaosState::<3, 2>::new([0.0, 0.0]);
-            let mut chaos_rng = RngState::new(seed as u32 + i as u32 * 100);
-            
-            let mut tweak = MicroTweak {
-                s_exponent: 1.5, // Will be dynamically adjusted below
-                max_elements: 1000,
-            };
-
-            let num_steps = 300; 
-            let mut raw_points = Vec::with_capacity(num_steps);
-            
-            for step in 0..num_steps {
-                // Determine which bar we are currently drawing
-                let bar_idx = (step * cost_scores.len()) / num_steps;
-                let current_cost = cost_scores.get(bar_idx).unwrap_or(&1.2);
-                
-                // Synesthesia Mapping: High Cost (Dissonance) -> Low s_exponent (Chaos Levy Flight)
-                // Low Cost (Consonance) -> High s_exponent (Stable Gaussian Attractor)
-                // Cost is typically between 1.0 (very consonant) and 2.0 (very dissonant)
-                // We map this inversely to s_exponent (1.1 for extreme chaos, 3.0 for stability)
-                let mapped_s = 3.5 - (current_cost * 1.5);
-                let final_s = mapped_s.clamp(1.1, 3.0) as f32;
-                
-                tweak.s_exponent = final_s + rng_std.random_range(-0.1_f32..0.1_f32); // Add slight micro-jitter
-
-                chaos = step_forward_nd(&chaos, &tweak, &mut chaos_rng);
-                raw_points.push(Point {
-                    x: chaos.base_values[0] as f64,
-                    y: chaos.base_values[1] as f64,
-                });
-            }
-
-            // Normalize points
-            let (mut min_x, mut max_x) = (f64::MAX, f64::MIN);
-            let (mut min_y, mut max_y) = (f64::MAX, f64::MIN);
-            
-            for p in &raw_points {
-                if p.x < min_x { min_x = p.x; }
-                if p.x > max_x { max_x = p.x; }
-                if p.y < min_y { min_y = p.y; }
-                if p.y > max_y { max_y = p.y; }
-            }
-
-            let range_x = max_x - min_x;
-            let range_y = max_y - min_y;
-            let max_range = range_x.max(range_y);
-            
-            // Keep the chaos somewhat centered
-            let padding = 150.0;
-            let canvas_size = 800.0 - (padding * 2.0);
-            let scale = if max_range > 0.0 { canvas_size / max_range } else { 1.0 };
-            
-            let mut normalized_points = Vec::with_capacity(num_steps);
-            for p in &raw_points {
-                let nx = (p.x - min_x) - (range_x / 2.0);
-                let ny = (p.y - min_y) - (range_y / 2.0);
-                normalized_points.push(Point {
-                    x: nx * scale,
-                    y: ny * scale,
-                });
-            }
-
-            // Apply Radial Symmetry and Smoothing
-            for sym in 0..num_symmetry {
-                let angle = (sym as f64) * (2.0 * PI / num_symmetry as f64);
-                let cos_a = angle.cos();
-                let sin_a = angle.sin();
-                let center = 400.0;
-
-                let mut rotated_points = Vec::with_capacity(num_steps);
-                for p in &normalized_points {
-                    // Rotate around origin, then translate to center
-                    let rx = p.x * cos_a - p.y * sin_a;
-                    let ry = p.x * sin_a + p.y * cos_a;
-                    rotated_points.push(Point {
-                        x: rx + center,
-                        y: ry + center,
-                    });
-                }
-
-                // 1. Draw smooth bezier path
-                let mut path_d = String::new();
-                for (j, p) in rotated_points.iter().enumerate() {
-                    if j == 0 {
-                        path_d.push_str(&format!("M {:.1} {:.1} ", p.x, p.y));
-                    } else if j < rotated_points.len() - 1 {
-                        // Quadratic bezier smoothing: use midpoint as the target, and current point as control
-                        let next = &rotated_points[j + 1];
-                        let mid_x = (p.x + next.x) / 2.0;
-                        let mid_y = (p.y + next.y) / 2.0;
-                        path_d.push_str(&format!("Q {:.1} {:.1} {:.1} {:.1} ", p.x, p.y, mid_x, mid_y));
-                    } else {
-                        path_d.push_str(&format!("L {:.1} {:.1} ", p.x, p.y));
-                    }
-                }
-
-                shapes.push(Shape {
-                    shape_type: ShapeType::Path(path_d),
-                    color: Color { h: strand_hue, s: 0.9, l: 0.6 },
-                    fill_opacity: 0.0,
-                    stroke_color: Some(Color { h: strand_hue, s: 1.0, l: 0.7 }),
-                    stroke_width: 0.2, // Ultra-thin line to reduce center clutter
-                });
-
-                // 2. Add Bokeh Particles at random intervals, but ONLY outside the center!
-                for (j, p) in rotated_points.iter().enumerate() {
-                    if j % 8 == 0 { // Increased frequency since we have fewer steps
-                        let dist_to_center = ((p.x - center).powi(2) + (p.y - center).powi(2)).sqrt();
-                        
-                        // Keep the center clean (no bokeh inside radius 80)
-                        if dist_to_center > 80.0 {
-                            let radius = 5.0 + (dist_to_center / 30.0);
-                            
-                            shapes.push(Shape {
-                                shape_type: ShapeType::Circle { center: p.clone(), radius },
-                                color: Color { h: strand_hue, s: 0.9, l: 0.8 },
-                                fill_opacity: 0.06, // Slightly brighter since there are fewer
-                                stroke_color: None,
-                                stroke_width: 0.0,
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Add track label
+        // Background
         shapes.push(Shape {
-            shape_type: ShapeType::Text {
-                pos: Point { x: 40.0, y: 740.0 },
-                text: format!("SEARU // {}", track_name.to_uppercase()),
-                font_size: 32.0,
+            shape_type: ShapeType::Rect {
+                pos: Point { x: 0.0, y: 0.0 },
+                width: 800.0,
+                height: 800.0,
+                rx: 0.0,
             },
-            color: Color { h: hue_base, s: 0.1, l: 0.9 },
+            color: Color { h: hue_base, s: 0.05, l: 0.04 }, // Dark background
             fill_opacity: 1.0,
             stroke_color: None,
             stroke_width: 0.0,
         });
-        
+
+        // Horizon Line
+        let horizon_y = 650.0;
+        shapes.push(Shape {
+            shape_type: ShapeType::Path(format!("M 0.0 {:.2} L 800.0 {:.2}", horizon_y, horizon_y)),
+            color: Color { h: hue_base, s: 0.5, l: 0.3 },
+            fill_opacity: 0.0,
+            stroke_color: Some(Color { h: hue_base, s: 0.5, l: 0.3 }),
+            stroke_width: 2.0,
+        });
+
+        // Generate the Fractal Tree
+        let tree_depth = profile.fractal_depth; // Configurable complexity
+        let initial_length = 130.0;
+        let root_x = 400.0;
+        let root_y = horizon_y;
+        let root_angle = -std::f64::consts::PI / 2.0; // Pointing straight up
+
+        Self::draw_branch(&mut shapes, &mut rng_std, root_x, root_y, initial_length, root_angle, tree_depth, hue_base);
+
+        // Add track label
+        shapes.push(Shape {
+            shape_type: ShapeType::Text {
+                pos: Point { x: 40.0, y: 740.0 },
+                text: format!("SEARU // {} // FRACTAL GROWTH", track_name.to_uppercase()),
+                font_size: 28.0,
+            },
+            color: Color { h: hue_base, s: 0.3, l: 0.7 },
+            fill_opacity: 1.0,
+            stroke_color: None,
+            stroke_width: 0.0,
+        });
+
         shapes
     }
 }

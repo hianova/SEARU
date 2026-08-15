@@ -15,12 +15,18 @@ mod typography;
 mod ui_layout;
 mod visual;
 mod album;
+pub mod profile;
 
-use axum::{Json, Router, http::header, response::IntoResponse, routing::get};
+use axum::{Json, Router, http::header, response::IntoResponse, routing::{get, post}};
 use serde::Serialize;
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
+use axum::response::sse::{Event, Sse};
+use futures::stream::Stream;
+use tokio_stream::wrappers::BroadcastStream;
+use tokio_stream::StreamExt;
+use std::convert::Infallible;
 
 use api::SearuApi;
 use architecture::FloorPlanner;
@@ -36,9 +42,14 @@ use visual::exporter::SvgExporter;
 async fn main() {
     println!("🚀 Starting SEARU Web UI Server on http://localhost:3000");
 
+    // Initialize telemetry channel (capacity 1000)
+    let (tx, _) = tokio::sync::broadcast::channel(1000);
+    crate::science::crucible::TELEMETRY_TX.set(tx).unwrap();
+
     let app = Router::new()
         .nest_service("/", ServeDir::new("public"))
         .route("/api/music/bach", get(api_music_bach))
+        .route("/api/music/generate", post(api_music_generate))
         .route("/api/visual/art", get(api_visual_art))
         .route("/api/mechanics/truss", get(api_mechanics_truss))
         .route("/api/materials/match", get(api_materials_match))
@@ -47,9 +58,10 @@ async fn main() {
         .route("/api/pcb_routing/route", get(api_pcb_route))
         .route("/api/typography/glyph", get(api_typography_glyph))
         .route("/api/procedural_animation/curve", get(api_anim_curve))
-        .route("/api/megacity/pipeline", get(api_megacity_pipeline))
+        .route("/api/megacity/pipeline", post(api_megacity_pipeline))
         .route("/api/fractal/universe", get(api_fractal_universe))
         .route("/api/album/release", get(api_album_release))
+        .route("/api/telemetry", get(api_telemetry))
         .layer(CorsLayer::permissive());
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
@@ -57,11 +69,33 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
+async fn api_telemetry() -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    let tx = crate::science::crucible::TELEMETRY_TX.get().unwrap();
+    let rx = tx.subscribe();
+    
+    let stream = BroadcastStream::new(rx)
+        .filter_map(|msg| {
+            match msg {
+                Ok(event) => Some(Ok(Event::default().json_data(event).unwrap())),
+                Err(_) => None, // Ignore lag errors
+            }
+        });
+
+    Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::new())
+}
+
 async fn api_music_bach() -> impl IntoResponse {
     let sample_rate = 44100;
     let bach_audio_buffer =
         SearuApi::generate_bach_progression(&[60.0, 64.0, 67.0], 4, 1.2, sample_rate);
     let bytes = AudioExporter::encode_to_wav_bytes(&bach_audio_buffer, sample_rate).unwrap();
+    ([(header::CONTENT_TYPE, "audio/wav")], bytes)
+}
+
+async fn api_music_generate(axum::Json(profile): axum::Json<crate::profile::ArtistProfile>) -> impl IntoResponse {
+    let sample_rate = 44100;
+    let audio_buffer = SearuApi::generate_music_with_profile(&profile);
+    let bytes = AudioExporter::encode_to_wav_bytes(&audio_buffer, sample_rate).unwrap();
     ([(header::CONTENT_TYPE, "audio/wav")], bytes)
 }
 
@@ -121,8 +155,8 @@ async fn api_anim_curve() -> impl IntoResponse {
     Json(SearuApi::optimize_animation_transition())
 }
 
-async fn api_megacity_pipeline() -> impl IntoResponse {
-    let svg_str = MegaCityPipeline::run_pipeline();
+async fn api_megacity_pipeline(axum::Json(profile): axum::Json<crate::profile::MegaCityProfile>) -> impl IntoResponse {
+    let svg_str = MegaCityPipeline::run_pipeline(profile);
     ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
 }
 

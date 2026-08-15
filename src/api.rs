@@ -24,6 +24,21 @@ impl SearuApi {
         NoiseGenerator::generate(color, seconds, sample_rate)
     }
 
+    pub fn generate_music_with_profile(profile: &crate::profile::ArtistProfile) -> Vec<f32> {
+        use crate::music::macro_arranger::MacroArranger;
+        use crate::music::arranger::Arranger;
+        
+        let sample_rate = 44100;
+        let bpm = 120.0;
+        // Use the profile's phrase length for the loop
+        let bars = profile.culture.phrase_length_bars;
+        let seed_chord = [60.0, 64.0, 67.0]; // C Major
+        let energy_curve = MacroArranger::evolve_energy_curve(bars);
+        
+        let (audio_data, _, _) = Arranger::compose_track(&seed_chord, bars, bpm, sample_rate, &energy_curve, profile);
+        audio_data
+    }
+
     pub fn generate_bach_progression(
         start_chord: &[f64],
         num_chords: usize,
@@ -35,7 +50,7 @@ impl SearuApi {
         let mut progression = vec![current_chord.clone()];
 
         for _ in 0..num_chords.saturating_sub(1) {
-            let (next_chord, _) = EvolutionaryComposer::discover_bach_progression(&history);
+            let (next_chord, _) = EvolutionaryComposer::discover_bach_progression(&history, 0.0);
             progression.push(next_chord.clone());
             history.push(next_chord.clone());
             current_chord = next_chord;
@@ -51,7 +66,7 @@ impl SearuApi {
     }
 
     pub fn generate_visual_art(num_shapes: usize, points_per_shape: usize) -> Vec<Shape> {
-        VisualComposer::generate_art(num_shapes, "API_Art", &[1.2])
+        VisualComposer::generate_art(num_shapes, "API_Art", &[1.2], &crate::profile::VisualProfile::default())
     }
 
     pub fn optimize_mechanics_truss() -> Truss {
@@ -62,11 +77,11 @@ impl SearuApi {
         target_front_rgb: [f64; 3],
         target_edge_rgb: [f64; 3],
     ) -> PbrMaterial {
-        MaterialMatcher::match_material(target_front_rgb, target_edge_rgb)
+        MaterialMatcher::match_material(target_front_rgb)
     }
 
     pub fn optimize_floorplan() -> Vec<Room> {
-        FloorPlanner::optimize_layout()
+        FloorPlanner::optimize_layout(crate::profile::ArchProfile::default())
     }
     pub fn optimize_ui_layout() -> Vec<LayoutNode> {
         UiOptimizer::optimize()
