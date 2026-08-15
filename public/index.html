@@ -3,234 +3,452 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEARU :: Algorithmic Music Generation</title>
-    <link rel="stylesheet" href="style.css?v=2">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>SEARU Studio :: Universal Generative Design & R&D Suite</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header>
-            <div class="logo">SEARU <span class="subtitle">:: ALGORITHMIC MUSIC PLATFORM</span></div>
-            <div class="controls">
-                <button id="exportBtn" class="btn-primary">Export searu_profile.json</button>
+    <div class="studio-app">
+        <!-- Top App Bar -->
+        <header class="top-bar">
+            <div class="brand-section">
+                <div class="logo-text">SEARU <span class="badge">STUDIO v2.5</span></div>
+                <div class="tagline">Universal Generative Design & R&D Suite</div>
+            </div>
+
+            <div class="top-controls">
+                <div class="preset-selector-group">
+                    <label for="presetSelect">PRESET:</label>
+                    <select id="presetSelect" class="studio-select">
+                        <option value="custom">-- Custom Profile --</option>
+                        <option value="baroque_bach">Baroque Bach Counterpoint</option>
+                        <option value="cyberpunk_city">Cyberpunk MegaCity</option>
+                        <option value="acoustic_just">Just Intonation Harmony</option>
+                        <option value="drone_truss">Ultralight Drone Truss</option>
+                        <option value="high_density_pcb">High-Density PCB Routing</option>
+                    </select>
+                </div>
+
+                <button id="exportProfileBtn" class="btn btn-outline" title="Export current settings as searu_profile.json">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Export Profile
+                </button>
+
+                <div class="server-status">
+                    <span class="status-dot pulse"></span>
+                    <span class="status-text">CRUCIBLE ONLINE</span>
+                </div>
             </div>
         </header>
 
-        <main class="dashboard">
-            <!-- Column 1: Cultural Biases -->
-            <section class="panel panel-left">
-                <h2>CULTURAL BIASES</h2>
-                <div class="panel-content">
+        <!-- Domain Workspace Switcher (Tabs) -->
+        <nav class="domain-tabs" id="domainTabs">
+            <button class="tab-btn active" data-domain="music">
+                <span class="tab-icon">🎧</span>
+                <span class="tab-label">Music Studio</span>
+            </button>
+            <button class="tab-btn" data-domain="architecture">
+                <span class="tab-icon">🏛️</span>
+                <span class="tab-label">Architecture</span>
+            </button>
+            <button class="tab-btn" data-domain="mechanics">
+                <span class="tab-icon">🏗️</span>
+                <span class="tab-label">Mechanics</span>
+            </button>
+            <button class="tab-btn" data-domain="pcb">
+                <span class="tab-icon">🔌</span>
+                <span class="tab-label">PCB Routing</span>
+            </button>
+            <button class="tab-btn" data-domain="visual">
+                <span class="tab-icon">🎨</span>
+                <span class="tab-label">Visual & Type</span>
+            </button>
+            <button class="tab-btn" data-domain="megacity">
+                <span class="tab-icon">🌆</span>
+                <span class="tab-label">MegaCity Co-Evolution</span>
+            </button>
+            <button class="tab-btn" data-domain="fractal">
+                <span class="tab-icon">🌌</span>
+                <span class="tab-label">Fractal Universe</span>
+            </button>
+            <button class="tab-btn" data-domain="album">
+                <span class="tab-icon">💿</span>
+                <span class="tab-label">Album Release</span>
+            </button>
+        </nav>
+
+        <!-- Main Studio Body: 3-Column Layout -->
+        <div class="studio-body">
+            
+            <!-- Left Column: Parameter Inspector -->
+            <aside class="panel panel-inspector">
+                <div class="panel-header">
+                    <h2 id="inspectorTitle">MUSIC PARAMETERS</h2>
+                    <span class="sub-badge" id="inspectorDomainBadge">AUDIO</span>
+                </div>
+
+                <div class="inspector-content" id="inspectorForms">
                     
-                    <div class="control-group">
-                        <label>Tuning System</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">12-TET</span>
-                            <input type="range" id="tuningScale" min="0" max="1" step="1" value="0">
-                            <span class="value-display" style="width:110px">Just Intonation</span>
+                    <!-- Form 1: Music Controls -->
+                    <div class="domain-form active" id="form-music">
+                        <div class="control-group">
+                            <label>Root Note (Fundamental Pitch)</label>
+                            <div class="control-row">
+                                <select id="musicRootSelect" class="studio-select full-width">
+                                    <option value="60">C4 (Middle C / 261.6 Hz)</option>
+                                    <option value="62">D4 (293.7 Hz)</option>
+                                    <option value="64">E4 (329.6 Hz)</option>
+                                    <option value="65">F4 (349.2 Hz)</option>
+                                    <option value="67">G4 (392.0 Hz)</option>
+                                    <option value="69">A4 (Concert Pitch 440.0 Hz)</option>
+                                    <option value="71">B4 (493.9 Hz)</option>
+                                    <option value="48">C3 (Low C / 130.8 Hz)</option>
+                                    <option value="57">A3 (220.0 Hz)</option>
+                                </select>
+                            </div>
+                            <p class="description">Base tonic for Bach counterpoint SATB voice evolution.</p>
                         </div>
-                        <p class="description">Force mathematically perfect scales into western piano keys.</p>
+
+                        <div class="control-group">
+                            <label>Chord Progression Length</label>
+                            <div class="control-row">
+                                <input type="range" id="musicChordsSlider" min="2" max="16" step="1" value="4">
+                                <span class="val-badge" id="musicChordsVal">4 Chords</span>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Harmonic Duration (sec / chord)</label>
+                            <div class="control-row">
+                                <input type="range" id="musicSecSlider" min="0.4" max="3.0" step="0.2" value="1.2">
+                                <span class="val-badge" id="musicSecVal">1.2s</span>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Tuning System</label>
+                            <div class="segmented-control">
+                                <button class="seg-btn active" data-val="12-TET" id="tuning12Tet">12-TET</button>
+                                <button class="seg-btn" data-val="Just" id="tuningJust">Just Intonation</button>
+                            </div>
+                            <p class="description">Mathematical pure ratios vs Western equal temperament.</p>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Plomp-Levelt Dissonance Tolerance</label>
+                            <div class="control-row">
+                                <input type="range" id="musicDissonanceSlider" min="0.1" max="10.0" step="0.1" value="2.0">
+                                <span class="val-badge" id="musicDissonanceVal">2.0</span>
+                            </div>
+                        </div>
+
+                        <button id="btnGenerateMusic" class="btn btn-primary btn-block">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            ANNEAL & SYNTHESIZE BACH
+                        </button>
                     </div>
 
-                    <div class="control-group">
-                        <label>Phrase Structure (Bars)</label>
-                        <div class="control-row">
-                            <input type="range" id="phraseLength" min="3" max="9" step="1" value="4">
-                            <span class="value-display" id="phraseLengthVal" style="width: 60px; text-align:right">4 Bars</span>
+                    <!-- Form 2: Architecture Controls -->
+                    <div class="domain-form" id="form-architecture">
+                        <div class="control-group">
+                            <label>Room Density (Population)</label>
+                            <div class="control-row">
+                                <input type="range" id="archDensitySlider" min="5" max="50" step="1" value="20">
+                                <span class="val-badge" id="archDensityVal">20 Rooms</span>
+                            </div>
                         </div>
-                        <p class="description">Standard pop music uses 4-bar loops. Prime numbers feel asymmetric.</p>
+                        <div class="control-group">
+                            <label>Zoning Ratio (Commercial vs Residential)</label>
+                            <div class="control-row">
+                                <input type="range" id="archZoningSlider" min="0.0" max="1.0" step="0.05" value="0.5">
+                                <span class="val-badge" id="archZoningVal">50% Commercial</span>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label>Environmental Wind Force (Stress Adversary)</label>
+                            <div class="control-row">
+                                <input type="range" id="archWindSlider" min="10" max="150" step="5" value="50">
+                                <span class="val-badge" id="archWindVal">50.0 F</span>
+                            </div>
+                        </div>
+                        <button id="btnGenerateArch" class="btn btn-primary btn-block">
+                            EVOLVE FLOORPLAN
+                        </button>
                     </div>
 
-                    <div class="control-group">
-                        <label>Rhythmic Grid</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:60px; text-align:right">4/4 EDM</span>
-                            <input type="range" id="rhythmicGrid" min="0" max="1" step="1" value="0">
-                            <span class="value-display" style="width:100px">Polyrhythmic</span>
+                    <!-- Form 3: Mechanics Controls -->
+                    <div class="domain-form" id="form-mechanics">
+                        <div class="control-group">
+                            <label>Truss Span & Geometry</label>
+                            <div class="control-row">
+                                <select id="trussTypeSelect" class="studio-select full-width">
+                                    <option value="warren">Warren Truss (5-Node Load System)</option>
+                                    <option value="pratt">Pratt Bridge Truss</option>
+                                </select>
+                            </div>
                         </div>
-                        <p class="description">Lock events to a 16-step grid or allow organic time subdivisions.</p>
+                        <div class="control-group">
+                            <label>Vertical Force at Load Point (N)</label>
+                            <div class="control-row">
+                                <input type="range" id="trussForceSlider" min="100" max="5000" step="100" value="1000">
+                                <span class="val-badge" id="trussForceVal">1000 N</span>
+                            </div>
+                        </div>
+                        <button id="btnGenerateTruss" class="btn btn-primary btn-block">
+                            OPTIMIZE TRUSS TOPOLOGY
+                        </button>
+                    </div>
+
+                    <!-- Form 4: PCB Routing Controls -->
+                    <div class="domain-form" id="form-pcb">
+                        <div class="control-group">
+                            <label>Board Dimensions</label>
+                            <div class="val-badge">400 x 400 mm</div>
+                        </div>
+                        <div class="control-group">
+                            <label>Net Topologies</label>
+                            <p class="description">2 Diagonal Crossing Nets with Simulated Annealing waypoint collision avoidance.</p>
+                        </div>
+                        <button id="btnGeneratePcb" class="btn btn-primary btn-block">
+                            SOLVE PCB ROUTING
+                        </button>
+                    </div>
+
+                    <!-- Form 5: Visual & Typography Controls -->
+                    <div class="domain-form" id="form-visual">
+                        <div class="control-group">
+                            <label>Visual Mode</label>
+                            <div class="segmented-control">
+                                <button class="seg-btn active" id="visModeArt">HSL Geometric Art</button>
+                                <button class="seg-btn" id="visModeType">Bezier Typography</button>
+                            </div>
+                        </div>
+                        <div id="visArtControls">
+                            <div class="control-group">
+                                <label>Base Hue Angle</label>
+                                <div class="control-row">
+                                    <input type="range" id="visHueSlider" min="0" max="360" step="1" value="200">
+                                    <span class="val-badge" id="visHueVal">200° (Cyan)</span>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label>Shape Count</label>
+                                <div class="control-row">
+                                    <input type="range" id="visShapesSlider" min="4" max="30" step="1" value="12">
+                                    <span class="val-badge" id="visShapesVal">12 Shapes</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="btnGenerateVisual" class="btn btn-primary btn-block">
+                            RENDER ARTWORK
+                        </button>
+                    </div>
+
+                    <!-- Form 6: MegaCity Co-Evolution Controls -->
+                    <div class="domain-form" id="form-megacity">
+                        <p class="description" style="margin-bottom: 15px;">
+                            Co-evolves Architecture Layout + Structural Truss + Inverse PBR Materials into a unified blueprint.
+                        </p>
+                        <div class="control-group">
+                            <label>MegaCity Room Count</label>
+                            <div class="control-row">
+                                <input type="range" id="megaDensitySlider" min="10" max="60" step="5" value="25">
+                                <span class="val-badge" id="megaDensityVal">25 Rooms</span>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label>Target Material Tone (RGB)</label>
+                            <div class="color-picker-row">
+                                <input type="color" id="megaColorPicker" value="#38bdf8">
+                                <span class="val-badge" id="megaColorVal">#38bdf8</span>
+                            </div>
+                        </div>
+                        <button id="btnGenerateMegaCity" class="btn btn-primary btn-block">
+                            GENERATE MEGACITY PIPELINE
+                        </button>
+                    </div>
+
+                    <!-- Form 7: Fractal Universe Controls -->
+                    <div class="domain-form" id="form-fractal">
+                        <p class="description">
+                            Multi-layer recursive isomorphic projection: Architecture &rarr; UI Flexbox &rarr; PCB Routing &rarr; Visual Geometry.
+                        </p>
+                        <button id="btnGenerateFractal" class="btn btn-primary btn-block">
+                            EXPAND FRACTAL UNIVERSE
+                        </button>
+                    </div>
+
+                    <!-- Form 8: Album Batch Release Controls -->
+                    <div class="domain-form" id="form-album">
+                        <div class="control-group">
+                            <label>Batch Parallel Production</label>
+                            <p class="description">Spawns multi-threaded Rayon workers to compose, synthesize, and export 10 complete tracks with WAV, MIDI, and Album Art.</p>
+                        </div>
+                        <button id="btnTriggerAlbum" class="btn btn-primary btn-block">
+                            RELEASE 10-TRACK ALBUM
+                        </button>
                     </div>
 
                 </div>
-            </section>
+            </aside>
 
-            <!-- Column 2: Physical Canvas -->
-            <section class="panel panel-main">
-                <h2>PHYSICAL CANVAS (THE CRUCIBLE)</h2>
-                <div class="panel-content grid-layout">
+            <!-- Center Column: Viewport (Audio Player + Spectrum OR Interactive Canvas) -->
+            <main class="panel panel-viewport">
+                <div class="viewport-header">
+                    <div class="viewport-title-group">
+                        <h2 id="viewportTitle">LIVE PREVIEW</h2>
+                        <span class="viewport-mode-tag" id="viewportTag">AUDIO / SPECTRUM</span>
+                    </div>
+
+                    <div class="viewport-actions" id="canvasControls">
+                        <button id="btnZoomIn" class="icon-btn" title="Zoom In">+</button>
+                        <button id="btnZoomOut" class="icon-btn" title="Zoom Out">-</button>
+                        <button id="btnResetView" class="icon-btn" title="Reset View">&#x21bb;</button>
+                    </div>
+                </div>
+
+                <div class="viewport-content" id="viewportMain">
                     
-                    <!-- Dials -->
-                    <div class="dials-container">
-                        <div class="dial-group">
-                            <div class="knob" id="tensionKnob">
-                                <div class="knob-indicator" id="tensionInd"></div>
+                    <!-- Visual Container (SVG Mode) -->
+                    <div class="svg-stage-wrapper" id="svgStageWrapper" style="display: none;">
+                        <div class="svg-stage" id="svgStage">
+                            <div class="empty-state">
+                                <div class="empty-icon">📐</div>
+                                <div class="empty-text">Select a domain and click Generate to start annealing</div>
                             </div>
-                            <label>Dissonance Tolerance</label>
-                            <span class="value-display glow-text" id="tensionVal">2.0</span>
-                            <p class="description">Max target tension.</p>
                         </div>
+                    </div>
+
+                    <!-- Audio Stage (Music Mode) -->
+                    <div class="audio-stage-wrapper" id="audioStageWrapper">
                         
-                        <div class="dial-group">
-                            <div class="knob" id="fractalKnob">
-                                <div class="knob-indicator" id="fractalInd"></div>
-                            </div>
-                            <label>1/f Fractal Chaos</label>
-                            <span class="value-display glow-text" id="fractalVal">5.0</span>
-                            <p class="description">Strictness of leaps.</p>
-                        </div>
-                    </div>
-
-                    <!-- Visualizers -->
-                    <div class="visualizer-container">
-                        <div class="vis-box">
-                            <h3>TENSION CURVE PREVIEW</h3>
-                            <canvas id="tensionCanvas" width="400" height="150"></canvas>
-                        </div>
-                        <div class="vis-box">
-                            <h3>SYSTEM CONSOLE</h3>
-                            <div class="console-output" id="consoleOutput">
-                                <p class="sys">> SEARU Engine v2.0 Initialized.</p>
-                                <p class="sys">> Awaiting parameter adjustments...</p>
+                        <!-- Real-time Frequency Spectrum Analyzer Canvas -->
+                        <div class="spectrum-card">
+                            <canvas id="spectrumCanvas" width="700" height="220"></canvas>
+                            <div class="spectrum-overlay">
+                                <span class="spectrum-label">SEARU DSP REALTIME SPECTRUM</span>
+                                <span class="spectrum-fps" id="spectrumFps">44.1 kHz / 32-bit Float</span>
                             </div>
                         </div>
+
+                        <!-- Audio Player Widget -->
+                        <div class="player-widget">
+                            <div class="track-meta">
+                                <div class="track-title" id="playerTrackTitle">Bach Algorithmic Progression (SATB)</div>
+                                <div class="track-details" id="playerTrackDetails">4 Chords &bull; 12-TET &bull; Dissonance: 2.0</div>
+                            </div>
+
+                            <div class="player-timeline">
+                                <span class="time-display" id="playerCurrentTime">0:00</span>
+                                <input type="range" id="playerSeekSlider" min="0" max="100" value="0" step="0.1" class="seek-slider">
+                                <span class="time-display" id="playerTotalTime">0:00</span>
+                            </div>
+
+                            <div class="player-controls">
+                                <button id="playerPlayBtn" class="btn btn-play">
+                                    <svg id="playIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    <svg id="pauseIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                                </button>
+                                
+                                <div class="volume-control">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                    <input type="range" id="playerVolumeSlider" min="0" max="1" step="0.05" value="0.8" class="vol-slider">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Album Tracklist (Visible in Album Tab) -->
+                        <div class="album-tracklist-card" id="albumTracklistCard" style="display: none;">
+                            <h3>GENERATED ALBUM TRACKS (RELEASE CATALOG)</h3>
+                            <div class="track-list" id="albumTrackList">
+                                <div class="track-item placeholder">Click "Release 10-Track Album" to produce parallel tracks.</div>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
-            </section>
-        </main>
+            </main>
 
-        <!-- New Section: Urban Planning -->
-        <main class="dashboard" style="margin-top: 20px;">
-            <section class="panel panel-left">
-                <h2>URBAN PLANNING</h2>
-                <div class="panel-content">
+            <!-- Right Column: Telemetry & Actions -->
+            <aside class="panel panel-telemetry">
+                <div class="panel-header">
+                    <h2>TELEMETRY & EXPORTS</h2>
+                    <span class="sub-badge">METRICS</span>
+                </div>
+
+                <div class="telemetry-content">
                     
-                    <div class="control-group">
-                        <label>Population Density</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">Sparse</span>
-                            <input type="range" id="densitySlider" min="5" max="80" step="5" value="20">
-                            <span class="value-display" style="width:110px" id="densityVal">20 Rooms</span>
-                        </div>
-                        <p class="description">Number of rooms to generate.</p>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Zoning Ratio</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">Res</span>
-                            <input type="range" id="zoningSlider" min="0.0" max="1.0" step="0.1" value="0.5">
-                            <span class="value-display" style="width:110px" id="zoningVal">50% Com</span>
-                        </div>
-                        <p class="description">Residential (small) vs Commercial (large).</p>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Environmental Stress (Wind)</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">Calm</span>
-                            <input type="range" id="windSlider" min="10" max="150" step="10" value="50">
-                            <span class="value-display" style="width:110px" id="windVal">50.0 F</span>
-                        </div>
-                        <p class="description">Forces buildings to become compact and defensive.</p>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Generative Length (Bars)</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">Short</span>
-                            <input type="range" id="barsSlider" min="2" max="16" step="2" value="4">
-                            <span class="value-display" style="width:110px" id="barsVal">4 Bars</span>
+                    <!-- Convergence Telemetry Chart -->
+                    <div class="telemetry-card">
+                        <div class="card-label">SIMULATED ANNEALING CONVERGENCE</div>
+                        <canvas id="telemetryCanvas" width="300" height="140"></canvas>
+                        <div class="telemetry-stats-grid">
+                            <div class="stat-box">
+                                <span class="stat-name">TEMP</span>
+                                <span class="stat-val" id="statTemp">0.001°</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-name">LOSS</span>
+                                <span class="stat-val" id="statLoss">0.000</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-name">ITERS</span>
+                                <span class="stat-val" id="statIters">10,000</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-name">RATE</span>
+                                <span class="stat-val" id="statRate">99.4%</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>BPM (Tempo)</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">Slow</span>
-                            <input type="range" id="bpmSlider" min="60" max="180" step="1" value="120">
-                            <span class="value-display" style="width:110px" id="bpmVal">120 BPM</span>
+                    <!-- Multi-Format Export Toolbar -->
+                    <div class="export-card">
+                        <div class="card-label">EXPORT ASSETS</div>
+                        <div class="export-btn-grid">
+                            <button id="btnExportWav" class="btn btn-export">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                                Audio (.WAV)
+                            </button>
+                            <button id="btnExportMidi" class="btn btn-export">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                                MIDI (.MID)
+                            </button>
+                            <button id="btnExportSvg" class="btn btn-export">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                                Vector (.SVG)
+                            </button>
+                            <button id="btnExportJson" class="btn btn-export">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                Profile (.JSON)
+                            </button>
                         </div>
                     </div>
 
-                    <button id="genMusicBtn" class="btn-primary" style="width: 100%; margin-top: 20px; background-color: #f59e0b;">GENERATE & PLAY MUSIC</button>
-                    <audio id="musicPlayer" controls style="width: 100%; margin-top: 15px; display: none;"></audio>
-
-                    <div id="telemetryBox" style="display: none; margin-top: 20px; background: rgba(10, 10, 10, 0.8); padding: 15px; border-radius: 8px; border: 1px solid #1f2833;">
-                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #66fcf1; margin-bottom: 5px;">
-                            <span>THE CRUCIBLE (ANNEALING)</span>
-                            <span id="telemetryStatus">T: 100.0 | F: 0.00</span>
+                    <!-- System Terminal Console -->
+                    <div class="console-card">
+                        <div class="console-header">
+                            <span class="card-label">CRUCIBLE CONSOLE LOG</span>
+                            <button id="btnClearConsole" class="console-clear-btn">CLEAR</button>
                         </div>
-                        <canvas id="telemetryCanvas" width="300" height="80" style="width: 100%; height: 80px; border: 1px solid #1f2833; background: #0b0c10;"></canvas>
-                    </div>
-
-                    <h2 style="margin-top: 40px; margin-bottom: 15px;">URBAN PLANNING</h2>RT & MATERIALS</h2>
-
-                    <div class="control-group">
-                        <label>Fractal Tree Depth</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">Basic</span>
-                            <input type="range" id="fractalSlider" min="2" max="15" step="1" value="12">
-                            <span class="value-display" style="width:110px" id="fractalVal">Depth: 12</span>
+                        <div class="console-body" id="consoleBody">
+                            <div class="log-line sys">> SEARU Generative Studio v2.5 initialized.</div>
+                            <div class="log-line sys">> Connected to Axum HTTP & Web Audio Engine.</div>
                         </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>Visual Base Hue</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">0°</span>
-                            <input type="range" id="hueSlider" min="0" max="360" step="1" value="200">
-                            <span class="value-display" style="width:110px" id="hueVal">200° (Blue)</span>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Material Target Color (R)</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">0</span>
-                            <input type="range" id="colorRSlider" min="0.0" max="1.0" step="0.1" value="0.2">
-                            <span class="value-display" style="width:110px" id="colorRVal">0.2</span>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label>Material Target Color (G)</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">0</span>
-                            <input type="range" id="colorGSlider" min="0.0" max="1.0" step="0.1" value="0.2">
-                            <span class="value-display" style="width:110px" id="colorGVal">0.2</span>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label>Material Target Color (B)</label>
-                        <div class="control-row">
-                            <span class="value-display" style="width:50px; text-align:right">0</span>
-                            <input type="range" id="colorBSlider" min="0.0" max="1.0" step="0.1" value="0.2">
-                            <span class="value-display" style="width:110px" id="colorBVal">0.2</span>
-                        </div>
-                    </div>
-
-                    <button id="genCityBtn" class="btn-primary" style="width: 100%; margin-top: 20px;">GENERATE MEGACITY</button>
-                    
-                    <div id="blenderInfo" style="display:none; margin-top: 15px; padding: 10px; background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6;">
-                        <span style="color: #60a5fa; font-size: 12px; font-weight: bold;">[INDUSTRY PIPELINE ACTIVE]</span><br>
-                        <span style="font-size: 11px; color: #94a3b8;">SEARU has exported the algorithmic data for 3D rendering. Run this command in your terminal to build the city in Blender:</span><br>
-                        <code style="color: #cbd5e1; font-size: 11px; background: #0f172a; padding: 4px; display: block; margin-top: 5px;">blender --background --python public/blender/build_megacity.py</code>
-                    </div>
                 </div>
-            </section>
+            </aside>
 
-            <section class="panel panel-main">
-                <h2>MEGACITY RENDER (SVG)</h2>
-                <div class="panel-content" style="display: flex; justify-content: center; align-items: center; min-height: 400px; background: #0b0c10; border-radius: 4px;">
-                    <div id="citySvgContainer" style="width: 100%; height: 100%; overflow: hidden; display: flex; justify-content: center; align-items: center;">
-                        <span style="color: #45a29e; font-family: 'JetBrains Mono', monospace;">No city generated yet.</span>
-                    </div>
-                </div>
-            </section>
-        </main>
+        </div>
     </div>
-    
+
+    <!-- Hidden standard HTML5 audio element connected to Web Audio Context -->
+    <audio id="globalAudio" preload="auto"></audio>
+
     <script src="app.js"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@ pub enum DomainContext {
     Music { tension: f64, density: f64 },
     Architecture { height: f64, stress: f64 },
     Mechanics { degrees_of_freedom: f64 },
+    Language { prosody_complexity: f64, emotional_tension: f64 },
 }
 
 impl DomainContext {
@@ -27,23 +28,37 @@ impl DomainContext {
                 vec[0] = 3; // Domain ID
                 vec[5] = (*degrees_of_freedom * 2.0) as i8;
             }
+            DomainContext::Language { prosody_complexity, emotional_tension } => {
+                vec[0] = 4; // Domain ID
+                vec[6] = (*prosody_complexity * 10.0) as i8;
+                vec[7] = (*emotional_tension * 10.0) as i8;
+            }
         }
-        vec[7] = 1; // Global bias token
+        vec[7] = vec[7].saturating_add(1); // Global bias token (using saturating add to avoid overflow)
         vec
     }
 }
 
 pub struct ExperienceOracle {
     pub engine: EnlightenEngineFast,
+    pub stagnation_counter: usize,
+    pub genome_dimension: usize,
 }
 
 static ORACLE_INSTANCE: OnceLock<Mutex<ExperienceOracle>> = OnceLock::new();
 
 pub fn get_oracle() -> &'static Mutex<ExperienceOracle> {
     ORACLE_INSTANCE.get_or_init(|| {
+        let mut engine = EnlightenEngineFast::new(&[8, 128, 2]);
+        if let Ok(_) = engine.load("searu.engram") {
+            println!("👁 [Experience Oracle] Woke up. Loaded memory from 'searu.engram'");
+        } else {
+            println!("👁 [Experience Oracle] First incarnation. No engram file found.");
+        }
         Mutex::new(ExperienceOracle {
-            // Unified Latent Space network shape: input size 8, hidden 128, output 2 (temp, scale)
-            engine: EnlightenEngineFast::new(&[8, 128, 2]),
+            engine,
+            stagnation_counter: 0,
+            genome_dimension: 10,
         })
     })
 }
@@ -77,12 +92,21 @@ impl ExperienceOracle {
     /// Feedback loop: Called after The Crucible finishes an annealing run.
     pub fn learn(&mut self, fitness: f64, is_epiphany: bool) {
         if is_epiphany {
-            println!(
-                "🧬 [Experience Oracle] EPIPHANY ACHIEVED! Preserving current ENLIGHTEN topology."
-            );
-            // We do not mutate here, we preserve the golden weights.
-            // In a more complex system, we'd call `engine.export_to_high_precision()` and save it.
+            self.stagnation_counter = 0;
+            println!("🧬 [Experience Oracle] EPIPHANY ACHIEVED! Preserving current ENLIGHTEN topology.");
+            if let Err(e) = self.engine.save("searu.engram") {
+                eprintln!("🧬 [Experience Oracle] Failed to persist engram: {}", e);
+            } else {
+                println!("🧬 [Experience Oracle] Engram persisted to 'searu.engram'");
+            }
         } else {
+            self.stagnation_counter += 1;
+            
+            if self.stagnation_counter >= 10 {
+                self.trigger_paradigm_shift();
+                return;
+            }
+
             // If the run didn't hit an epiphany, we trigger NEAT (NeuroEvolution of Augmenting Topologies).
             // Lower fitness = higher mutation rate (Chaos).
             let error = (1.0 - fitness).max(0.01);
@@ -94,5 +118,18 @@ impl ExperienceOracle {
             );
             self.engine.mutate(mutation_rate);
         }
+    }
+
+    pub fn trigger_paradigm_shift(&mut self) {
+        self.stagnation_counter = 0;
+        self.genome_dimension += 1;
+        println!("\n=======================================================");
+        println!("🌌 [Paradigm Shift] Pareto Collapse Detected!");
+        println!("🌌 The system cannot resolve the conflict between Order and Chaos in {}D.", self.genome_dimension - 1);
+        println!("🌌 Ripping the Latent Space... Dimension Expanded to {}D!", self.genome_dimension);
+        println!("=======================================================\n");
+        
+        // Huge mutation to reset the topology in the new dimension
+        self.engine.mutate(0.5);
     }
 }

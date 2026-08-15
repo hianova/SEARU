@@ -10,6 +10,7 @@ pub mod enlighten_engine;
 pub mod math_objective;
 pub mod motif_tree;
 pub mod oracle;
+pub mod universal_objective;
 
 pub use assembly_funnel::{AssemblyFunnel, FunnelObserver};
 pub use chaos_runner::ChaosRunner;

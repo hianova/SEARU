@@ -12,7 +12,9 @@ mod music;
 mod pcb_routing;
 mod procedural_animation;
 pub mod profile;
+pub mod language;
 mod science;
+mod sensory;
 mod typography;
 mod ui_layout;
 mod visual;
@@ -45,7 +47,9 @@ use visual::exporter::SvgExporter;
 
 #[tokio::main]
 async fn main() {
-    println!("🚀 Starting SEARU Web UI Server on http://localhost:3000");
+    println!("🚀 Starting SEARU Autonomous Aesthetic Entity on http://localhost:3000");
+
+    tokio::spawn(autonomous_pulse());
 
     // Initialize telemetry channel (capacity 1000)
     let (tx, _) = tokio::sync::broadcast::channel(1000);
@@ -53,19 +57,21 @@ async fn main() {
 
     let app = Router::new()
         .nest_service("/", ServeDir::new("public"))
-        .route("/api/music/bach", get(api_music_bach))
+        .route("/api/music/bach", get(api_music_bach).post(api_music_bach_post))
         .route("/api/music/generate", post(api_music_generate))
-        .route("/api/visual/art", get(api_visual_art))
-        .route("/api/mechanics/truss", get(api_mechanics_truss))
-        .route("/api/materials/match", get(api_materials_match))
-        .route("/api/architecture/floorplan", get(api_arch_floorplan))
-        .route("/api/ui_layout/optimize", get(api_ui_layout))
-        .route("/api/pcb_routing/route", get(api_pcb_route))
-        .route("/api/typography/glyph", get(api_typography_glyph))
-        .route("/api/procedural_animation/curve", get(api_anim_curve))
+        .route("/api/visual/art", get(api_visual_art).post(api_visual_art_post))
+        .route("/api/mechanics/truss", get(api_mechanics_truss).post(api_mechanics_truss))
+        .route("/api/materials/match", get(api_materials_match).post(api_materials_match_post))
+        .route("/api/architecture/floorplan", get(api_arch_floorplan).post(api_arch_floorplan_post))
+        .route("/api/ui_layout/optimize", get(api_ui_layout).post(api_ui_layout))
+        .route("/api/pcb_routing/route", get(api_pcb_route).post(api_pcb_route))
+        .route("/api/typography/glyph", get(api_typography_glyph).post(api_typography_glyph))
+        .route("/api/procedural_animation/curve", get(api_anim_curve).post(api_anim_curve))
         .route("/api/megacity/pipeline", post(api_megacity_pipeline))
-        .route("/api/fractal/universe", get(api_fractal_universe))
-        .route("/api/album/release", get(api_album_release))
+        .route("/api/fractal/universe", get(api_fractal_universe).post(api_fractal_universe))
+        .route("/api/album/release", get(api_album_release).post(api_album_release))
+        .route("/api/album/tracks", get(api_album_tracks))
+        .route("/api/album/track/:filename", get(api_serve_album_track))
         .route("/api/telemetry", get(api_telemetry))
         .layer(CorsLayer::permissive());
 
@@ -88,10 +94,32 @@ async fn api_telemetry() -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::new())
 }
 
+async fn fallback() -> impl IntoResponse {
+    (
+        axum::http::StatusCode::NOT_FOUND,
+        "SEARU Edge Runtime: Route not found.",
+    )
+}
+
 async fn api_music_bach() -> impl IntoResponse {
     let sample_rate = 44100;
     let bach_audio_buffer =
         SearuApi::generate_bach_progression(&[60.0, 64.0, 67.0], 4, 1.2, sample_rate);
+    let bytes = AudioExporter::encode_to_wav_bytes(&bach_audio_buffer, sample_rate).unwrap();
+    ([(header::CONTENT_TYPE, "audio/wav")], bytes)
+}
+
+async fn api_music_bach_post(
+    axum::Json(req): axum::Json<api::BachRequest>,
+) -> impl IntoResponse {
+    let sample_rate = 44100;
+    let root = req.root_note.unwrap_or(60.0);
+    let num_chords = req.num_chords.unwrap_or(4);
+    let sec = req.seconds_per_chord.unwrap_or(1.2);
+    let start_chord = [root, root + 4.0, root + 7.0];
+
+    let bach_audio_buffer =
+        SearuApi::generate_bach_progression(&start_chord, num_chords, sec, sample_rate);
     let bytes = AudioExporter::encode_to_wav_bytes(&bach_audio_buffer, sample_rate).unwrap();
     ([(header::CONTENT_TYPE, "audio/wav")], bytes)
 }
@@ -106,7 +134,18 @@ async fn api_music_generate(
 }
 
 async fn api_visual_art() -> impl IntoResponse {
-    let shapes = SearuApi::generate_visual_art(10, 5);
+    let shapes = SearuApi::generate_visual_art(12, 200.0, 8);
+    let svg_str = SvgExporter::to_svg_string(&shapes);
+    ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
+}
+
+async fn api_visual_art_post(
+    axum::Json(req): axum::Json<api::VisualRequest>,
+) -> impl IntoResponse {
+    let num_shapes = req.num_shapes.unwrap_or(12);
+    let base_hue = req.base_hue.unwrap_or(200.0);
+    let depth = req.fractal_depth.unwrap_or(8);
+    let shapes = SearuApi::generate_visual_art(num_shapes, base_hue, depth);
     let svg_str = SvgExporter::to_svg_string(&shapes);
     ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
 }
@@ -135,8 +174,33 @@ async fn api_materials_match() -> impl IntoResponse {
     })
 }
 
+async fn api_materials_match_post(
+    axum::Json(req): axum::Json<api::MaterialRequest>,
+) -> impl IntoResponse {
+    let target_front = [req.target_r, req.target_g, req.target_b];
+    let target_edge = [
+        (req.target_r + 0.2).min(1.0),
+        (req.target_g + 0.2).min(1.0),
+        (req.target_b + 0.2).min(1.0),
+    ];
+    let mat = SearuApi::match_pbr_material(target_front, target_edge);
+    Json(PbrResponse {
+        albedo: mat.albedo,
+        roughness: mat.roughness,
+        metallic: mat.metallic,
+    })
+}
+
 async fn api_arch_floorplan() -> impl IntoResponse {
-    let rooms = SearuApi::optimize_floorplan();
+    let rooms = SearuApi::optimize_floorplan(crate::profile::ArchProfile::default());
+    let svg_str = FloorPlanner::to_svg_string(&rooms);
+    ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
+}
+
+async fn api_arch_floorplan_post(
+    axum::Json(profile): axum::Json<crate::profile::ArchProfile>,
+) -> impl IntoResponse {
+    let rooms = SearuApi::optimize_floorplan(profile);
     let svg_str = FloorPlanner::to_svg_string(&rooms);
     ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
 }
@@ -171,6 +235,102 @@ async fn api_megacity_pipeline(
 async fn api_fractal_universe() -> impl IntoResponse {
     let svg_str = FractalEngine::generate_universe();
     ([(header::CONTENT_TYPE, "image/svg+xml")], svg_str)
+}
+
+async fn api_album_tracks() -> impl IntoResponse {
+    let tracks = SearuApi::list_album_tracks();
+    Json(tracks)
+}
+
+async fn api_serve_album_track(
+    axum::extract::Path(filename): axum::extract::Path<String>,
+) -> impl IntoResponse {
+    let safe_name = std::path::Path::new(&filename)
+        .file_name()
+        .and_then(|f| f.to_str())
+        .unwrap_or("default");
+    let path = format!("release/{}", safe_name);
+
+    if let Ok(bytes) = std::fs::read(&path) {
+        let content_type = if safe_name.ends_with(".wav") {
+            "audio/wav"
+        } else if safe_name.ends_with(".svg") {
+            "image/svg+xml"
+        } else if safe_name.ends_with(".mid") {
+            "audio/midi"
+        } else {
+            "application/octet-stream"
+        };
+        ([(header::CONTENT_TYPE, content_type)], bytes).into_response()
+    } else {
+        (axum::http::StatusCode::NOT_FOUND, "Track file not found").into_response()
+    }
+}
+
+async fn autonomous_pulse() {
+    use crate::science::crucible::{TheCrucible, Gene};
+    use crate::science::oracle::{get_oracle, DomainContext};
+    use tokio::time::{sleep, Duration};
+    use rand::Rng;
+
+    println!("🫀 [Autonomous Pulse] Daemon started. The entity is now dreaming.");
+    
+    // Ensure the oracle is initialized and loaded from disk right away
+    {
+        drop(get_oracle().lock().unwrap());
+    }
+
+    loop {
+        // Sleep between 5 and 15 seconds to simulate background thinking/dreaming
+        let sleep_duration = rand::rng().random_range(5..15);
+        sleep(Duration::from_secs(sleep_duration)).await;
+
+        let mut rng = rand::rng();
+        let domain = match rng.random_range(0..3) {
+            0 => DomainContext::Architecture {
+                height: rng.random_range(0.1..1.0),
+                stress: rng.random_range(0.1..1.0),
+            },
+            1 => DomainContext::Music {
+                tension: rng.random_range(0.1..1.0),
+                density: rng.random_range(0.1..1.0),
+            },
+            _ => DomainContext::Language {
+                prosody_complexity: rng.random_range(0.1..1.0),
+                emotional_tension: rng.random_range(0.1..1.0),
+            },
+        };
+
+        println!("💭 [Autonomous Pulse] Dreaming about {:?}", domain);
+
+        let genome_dim = get_oracle().lock().unwrap().genome_dimension;
+        let initial_genes: Vec<Gene> = (0..genome_dim).map(|i| Gene {
+            name: format!("dream_gene_{}", i),
+            bounds: (0.0, 1.0),
+            current_value: rng.random_range(0.0..1.0),
+        }).collect();
+        
+        let (fit, _, final_genes) = TheCrucible::anneal_with_sublime(
+            initial_genes,
+            domain,
+            |genes| {
+                crate::science::universal_objective::evaluate_dissonance(genes)
+            },
+            500 // Short dream iteration
+        );
+
+        let lang_decode = crate::language::conlang::decode_genes_to_language(&final_genes);
+        let music_decode = crate::music::composer::decode_genes_to_midi(&final_genes);
+        let choreo_decode = crate::sensory::choreography::decode_genes_to_choreography(&final_genes);
+        let gastro_decode = crate::sensory::gastronomy::decode_genes_to_gastronomy(&final_genes);
+
+        println!("🌌 [Universal Decoder] Epiphany rendered!");
+        println!("   -> Universal Fitness: {:.4}", fit);
+        println!("   -> Language Projection: {}", lang_decode);
+        println!("   -> Music Projection: {}", music_decode);
+        println!("   -> Choreography Projection: {}", choreo_decode);
+        println!("   -> Gastronomy Projection: {}", gastro_decode);
+    }
 }
 
 async fn api_album_release() -> impl IntoResponse {

@@ -16,6 +16,37 @@ use crate::pcb_routing::{PcbRouter, Trace};
 use crate::procedural_animation::{AnimationCurve, AnimationOptimizer};
 use crate::typography::{Glyph, TypographyGenerator};
 use crate::ui_layout::{LayoutNode, UiOptimizer};
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct BachRequest {
+    pub root_note: Option<f64>,
+    pub num_chords: Option<usize>,
+    pub seconds_per_chord: Option<f32>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct VisualRequest {
+    pub num_shapes: Option<usize>,
+    pub base_hue: Option<f64>,
+    pub fractal_depth: Option<usize>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct MaterialRequest {
+    pub target_r: f64,
+    pub target_g: f64,
+    pub target_b: f64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TrackInfo {
+    pub id: String,
+    pub name: String,
+    pub wav_url: String,
+    pub midi_url: String,
+    pub svg_url: String,
+}
 
 pub struct SearuApi;
 
@@ -66,12 +97,16 @@ impl SearuApi {
         full_audio_buffer
     }
 
-    pub fn generate_visual_art(num_shapes: usize, points_per_shape: usize) -> Vec<Shape> {
+    pub fn generate_visual_art(num_shapes: usize, base_hue: f64, depth: usize) -> Vec<Shape> {
+        let profile = crate::profile::VisualProfile {
+            fractal_depth: depth,
+            base_hue,
+        };
         VisualComposer::generate_art(
             num_shapes,
-            "API_Art",
-            &[1.2],
-            &crate::profile::VisualProfile::default(),
+            "SEARU_Art",
+            &[1.2, 0.8, 1.5, 0.4],
+            &profile,
         )
     }
 
@@ -86,19 +121,54 @@ impl SearuApi {
         MaterialMatcher::match_material(target_front_rgb)
     }
 
-    pub fn optimize_floorplan() -> Vec<Room> {
-        FloorPlanner::optimize_layout(crate::profile::ArchProfile::default())
+    pub fn optimize_floorplan(profile: crate::profile::ArchProfile) -> Vec<Room> {
+        FloorPlanner::optimize_layout(profile)
     }
+
     pub fn optimize_ui_layout() -> Vec<LayoutNode> {
         UiOptimizer::optimize()
     }
+
     pub fn route_pcb() -> Vec<Trace> {
         PcbRouter::route()
     }
+
     pub fn generate_glyph() -> Glyph {
         TypographyGenerator::generate_glyph()
     }
+
     pub fn optimize_animation_transition() -> AnimationCurve {
         AnimationOptimizer::optimize_transition()
     }
+
+    pub fn list_album_tracks() -> Vec<TrackInfo> {
+        let mut tracks = Vec::new();
+        let release_dir = std::path::Path::new("release");
+        if release_dir.exists() {
+            if let Ok(entries) = std::fs::read_dir(release_dir) {
+                let mut base_names = std::collections::BTreeSet::new();
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if let Some(ext) = path.extension() {
+                        if ext == "wav" || ext == "mid" || ext == "svg" {
+                            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                                base_names.insert(stem.to_string());
+                            }
+                        }
+                    }
+                }
+                for name in base_names {
+                    tracks.push(TrackInfo {
+                        id: name.clone(),
+                        name: name.clone(),
+                        wav_url: format!("/api/album/track/{}.wav", name),
+                        midi_url: format!("/api/album/track/{}.mid", name),
+                        svg_url: format!("/api/album/track/{}.svg", name),
+                    });
+                }
+            }
+        }
+        tracks
+    }
 }
+

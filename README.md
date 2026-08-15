@@ -1,58 +1,76 @@
-# SEARU: The Universal Generative Design & R&D Suite
+# SEARU Studio: The Universal Generative Design & R&D Suite
 
-## 核心理念 (Core Philosophy)
+SEARU 是一個以 Rust 構建的高性能**跨領域生成式設計與研發輔助引擎**。
+它的目標是將複雜的工程與藝術設計問題轉化為參數空間的演化求解，透過模擬退火（Simulated Annealing）與約束對抗演算法，自動搜尋出符合聲學、幾何、力學與空間美學的最佳結構。
 
-SEARU 是一個通用的**「生成式設計與研發輔助引擎」**。
-我們的終極目標是**「跨領域降低設計與研發的複雜度 (Reduce Design and R&D Complexity)」**。
+---
 
-無論是軟體架構、音樂藝術、視覺幾何，甚至是物理機構與材料力學，設計的本質往往是「在龐大的參數空間中尋找最優解」。傳統的研發依賴長時間的試錯與人力微調；SEARU 改變了這個範式：它將設計參數（和弦、幾何尺寸、物理邊界條件）視為「基因 (Genes)」。
+## ✨ 核心特色 (Core Highlights)
 
-透過強大核心引擎 (`The Crucible` 真正的模擬退火大腦)，SEARU 能夠在純粹的數學層面上，為任何領域「演化」與「計算」出最完美的結構。讓創作者與工程師從繁瑣的旋鈕海洋與盲目試驗中解放，專注於定義美學、物理邊界與高階約束。
+1. **真實聲學模型與巴哈對位法 (Music Theory & Acoustics)**：
+   - 精確實現 Sethares (1993) 的 **Plomp-Levelt 聲學不和諧度數值積分**。
+   - 嚴格判別 SATB 四聲部間的**平行五度與平行八度**禁忌，自動退火演化出嚴謹和諧的古典和弦進行。
+   - 內建 DSP 弦波合成器與能量曲線宏觀編曲器，支援生成 WAV 與標準 MIDI 檔案。
 
-## 為什麼需要 SEARU？
+2. **對抗式空間與建築佈局 (Architecture Layout Evolution)**：
+   - 採用 Min-Max 雙混沌對抗模型（Dual-Chaos Co-Evolution）：建築候選者追求空間最大化與 0 重疊（AABB 碰撞懲罰），環境生成器則施加動態風阻力矩，自動演化出最堅固且空間利用率最高的室內/建築佈局。
 
-1. **從盲目試錯到數學收斂**：不管是尋找最和諧的巴哈對位法、最穩固的桁架結構，還是最精準的 PBR 反射率，SEARU 都能瞬間退火計算出符合邊界條件的最佳解。
-2. **跨領域的研發大腦**：這套模擬退火與求解引擎可以毫無阻礙地套用在四大領域：`music` (音樂)、`visual` (視覺藝術)、`mechanics` (結構力學) 與 `materials` (光學材質)。
-3. **藝術、工程與科學的交點**：將演算法化為人類創造力的最強延伸。
+3. **跨領域設計實驗場 (Multi-Domain Laboratories)**：
+   - **力學結構 (Mechanics)**：2D 桁架拓撲受力分佈最佳化。
+   - **電路走線 (PCB Routing)**：雙向交叉網格中繼點退火避障。
+   - **視覺藝術 (Visual Art)**：基於 HSL 色彩和諧度與黃金比例的幾何向量生成。
+   - **分形宇宙 (Fractal Multiverse)**：多層級遞迴同構向量畫布。
 
-## 專案模組與九大生成領域
+4. **平行化完整專輯流水線 (Batch Album Production)**：
+   - 整合 `rayon` 多執行緒平行計算，一鍵批次作曲、合成、編曲並產出 10 首 3 分鐘音訊軌（含 WAV、MIDI 與專輯封面 SVG）。
 
-目前的 SEARU 包含一個核心科學大腦，並已成功打通 **九大** 數位設計實驗場域：
+---
 
-- `src/science/` (The Core Engine)
-  - **核心演算大腦**：包含 `The Crucible` 模擬退火引擎。引擎具有溫度控制機制 (Cooling Schedule)，可以智慧地跳出局部最佳解，所有跨領域的演化都在這裡發生。
-- `src/music/` (🎵 音樂領域)
-  - 結合巴哈對位法法則與聲學距離，演化出平順且充滿張力的和弦進行。
-- `src/visual/` (🎨 視覺領域)
-  - 使用 HSL 色彩和諧理論與形狀約束，演化出色彩協調的 SVG 幾何藝術。
-- `src/mechanics/` (🏗️ 力學領域)
-  - 為 2D 桁架 (Truss) 系統尋找最佳的應力分佈與最小質量。
-- `src/materials/` (🔮 材質領域)
-  - 逆向物理渲染 (Inverse PBR)：指定目標顏色，引擎能反推最佳的 Albedo、Roughness、Metallic 參數。
-- `src/architecture/` (🏛️ 建築佈局)
-  - **建築與空間格局規劃**：給定房間數量限制，透過懲罰重疊，自動擠壓與演化出最佳空間利用的室內牆面佈局 (Floorplan SVG)。
-- `src/ui_layout/` (🖥️ UI 排版)
-  - **UI / UX 響應式排版**：基於特定比例，自動運算各元素的最佳 Margin, Padding, 與 Flexbox 比例。
-- `src/pcb_routing/` (🔌 電路佈線)
-  - **電路板佈線與物流路徑**：解決短路與走線問題，退火尋找 0 交叉且曼哈頓距離最短的路徑中繼點。
-- `src/typography/` (🔤 字體生成)
-  - **字體排印與字型生成**：自動運算並尋找貝茲曲線控制點，確保字母筆畫曲線曲率的平滑度。
-- `src/procedural_animation/` (🎬 物理動畫)
-  - **程序化物理過渡**：自動演化出符合物理法則（單調遞增且符合 S-curve 特徵）的 Keyframe 運動軌跡。
+## 🎛️ SEARU Studio 2.5 專業工作台
 
-## Web UI 互動儀表板
+SEARU 配備了現代化的深石板色（Dark Slate）專業工作台 Web UI，提供：
+- **8 大領域專屬工作區**（Music Studio, Architecture, Mechanics, PCB, Visual, MegaCity, Fractal, Album Release）。
+- **即時 Web Audio 頻譜分析儀**（Realtime FFT Spectrum Visualizer）與音訊播放器。
+- **可互動向量畫布 (Interactive SVG Viewport)**：支援滑鼠滾輪平滑縮放 (Zoom) 與拖曳平移 (Pan)。
+- **模擬退火即時遙測 (Annealing Telemetry Monitor)**：即時繪製溫度降溫折線圖與 Loss 收斂過程。
+- **一鍵多格式匯出**（WAV 音訊、MIDI 樂譜、SVG 向量圖、Profile JSON 設定檔）。
 
-SEARU 現已進化為具備現代化 UI 的全端 Web 應用。我們使用 Rust `Axum` 打造極速的非同步 HTTP 伺服器，搭配深色 Glassmorphism (玻璃擬物化) 風格的前端，讓你可以直接在瀏覽器上進行九大領域的生成與即時預覽！
+---
 
-### 快速上手
+## 🚀 快速上手 (Getting Started)
 
-啟動伺服器：
+### 1. 啟動伺服器
 
 ```bash
 cargo run
 ```
 
-接著打開瀏覽器，前往：
-**http://localhost:3000**
+伺服器將在 `http://localhost:3000` 啟動極速 Axum HTTP 服務與背景演化守護程序。
 
-點擊九大模組的 Generate 按鈕，享受把數學法則化為設計藝術的極致體驗！
+### 2. 開啟 Studio 工作台
+
+打開瀏覽器，前往：
+👉 **http://localhost:3000**
+
+- 在上方切換領域工作區（如 `Music Studio`）。
+- 調整左側參數或從頂部下拉選單選擇預設範本（如 *Baroque Bach Counterpoint*、*Cyberpunk MegaCity*）。
+- 點擊 **Anneal & Synthesize** 即可即時試聽或預覽生成結果！
+
+---
+
+## 📡 REST API 端點一覽
+
+| Method | Endpoint | 說明 |
+| :--- | :--- | :--- |
+| `POST / GET` | `/api/music/bach` | 傳入 Root 音高與小節數，退火計算巴哈進行並回傳 WAV 音訊 |
+| `POST` | `/api/music/generate` | 傳入完整 ArtistProfile 進行能量曲線完整曲目生成 |
+| `POST / GET` | `/api/architecture/floorplan` | 傳入密度、分區比例與風力，回傳空間佈局 SVG |
+| `POST / GET` | `/api/mechanics/truss` | 回傳 2D 桁架拓撲受力分佈 SVG |
+| `POST / GET` | `/api/pcb_routing/route` | 回傳 PCB 電路走線與焊盤 SVG |
+| `POST / GET` | `/api/visual/art` | 傳入基礎色相與形狀數，回傳 HSL 幾何藝術 SVG |
+| `POST` | `/api/megacity/pipeline` | 跨領域協同演化建築、力學與 PBR 材質，回傳都市藍圖 SVG |
+| `POST / GET` | `/api/fractal/universe` | 遞迴擴展分形同構宇宙 SVG |
+| `POST / GET` | `/api/album/release` | 平行生產 10 首完整專輯曲目 |
+| `GET` | `/api/album/tracks` | 取得當前已發布專輯曲目清單 (JSON) |
+| `GET` | `/api/album/track/:filename` | 串流/下載特定專輯 WAV、MIDI 或 SVG |
+| `GET` | `/api/telemetry` | 透過 Server-Sent Events (SSE) 串流實時退火遙測數據 |

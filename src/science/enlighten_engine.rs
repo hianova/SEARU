@@ -60,17 +60,17 @@ impl LiquidKanLayerFast {
                 let min_scale = 1i16;
                 let max_scale = 5i16;
                 for s in sb.scales.iter_mut() {
-                    *s = rng.gen_range(min_scale..max_scale);
+                    *s = rng.random_range(min_scale..max_scale);
                 }
                 for o in sb.offsets.iter_mut() {
                     *o = 0;
                 }
                 for block in sb.blocks.iter_mut() {
                     for w in block.w_pos_bits.iter_mut() {
-                        *w = rng.r#gen();
+                        *w = rng.random();
                     }
                     for w in block.w_neg_bits.iter_mut() {
-                        *w = rng.r#gen();
+                        *w = rng.random();
                     }
                 }
             }
@@ -145,6 +145,24 @@ impl LiquidKanLayerFast {
             self.w_stream = new_w_stream;
         }
     }
+
+    pub fn save_weights(&self, writer: &mut impl std::io::Write) -> std::io::Result<()> {
+        writer.write_all(&(self.w_stream.len() as u64).to_le_bytes())?;
+        writer.write_all(&self.w_stream)?;
+        Ok(())
+    }
+
+    pub fn load_weights(&mut self, reader: &mut impl std::io::Read) -> std::io::Result<()> {
+        let mut len_buf = [0u8; 8];
+        reader.read_exact(&mut len_buf)?;
+        let len = u64::from_le_bytes(len_buf) as usize;
+        
+        if len != self.w_stream.len() {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Weight dimension mismatch"));
+        }
+        reader.read_exact(&mut self.w_stream)?;
+        Ok(())
+    }
 }
 
 /// ENLIGHTEN 硬體加速主引擎 (Vec101 Backend)
@@ -170,7 +188,7 @@ impl EnlightenEngineFast {
     /// 演化突變：以給定的機率翻轉 1.58-bit 權重的記憶體位元
     pub fn mutate(&mut self, mutation_rate: f32) {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let neat_rate = 0.001_f32; // Default NEAT growth rate
         for i in 0..self.layers.len() {
             if rng.random::<f32>() < neat_rate {
@@ -183,6 +201,24 @@ impl EnlightenEngineFast {
         for layer in self.layers.iter_mut() {
             vec101::util::feeder::mutate_weights(&mut layer.w_stream, mutation_rate);
         }
+    }
+
+    pub fn save(&self, path: &str) -> std::io::Result<()> {
+        use std::fs::File;
+        let mut file = File::create(path)?;
+        for layer in &self.layers {
+            layer.save_weights(&mut file)?;
+        }
+        Ok(())
+    }
+
+    pub fn load(&mut self, path: &str) -> std::io::Result<()> {
+        use std::fs::File;
+        let mut file = File::open(path)?;
+        for layer in &mut self.layers {
+            layer.load_weights(&mut file)?;
+        }
+        Ok(())
     }
 
     /// 給定連續的 INT8 輸入序列與時間步長 dt，利用 AVX2/NEON 進行超高速推論

@@ -158,6 +158,7 @@ impl EvolutionaryComposer {
 
         let (best_fitness, _best_sublime, best_genes) = TheCrucible::anneal_with_sublime(
             genes,
+            crate::science::oracle::DomainContext::Music { tension: 0.8, density: 0.5 },
             |current_genes| {
                 // Force to C Major Scale
                 let snap_to_scale = |midi: f64| -> f64 {
@@ -284,4 +285,22 @@ impl EvolutionaryComposer {
 
         (result, best_fitness)
     }
+}
+
+pub fn decode_genes_to_midi(genes: &[Gene]) -> String {
+    let mut notes = Vec::new();
+    // Map universal 0.0 - 1.0 energy values into MIDI note domain (e.g., C3 to C5)
+    for gene in genes {
+        let midi = 48.0 + (gene.current_value * 24.0); // 48 is C3, 24 semitones range
+        
+        // Quantize to C Major scale for human readability (optional, but requested for music)
+        let note = midi.round() as i32;
+        let pc = note.rem_euclid(12);
+        let shift = match pc {
+            1 => -1, 3 => -1, 6 => 1, 8 => -1, 10 => -1, _ => 0,
+        };
+        let final_midi = (note + shift) as f64;
+        notes.push(format!("{:.0}", final_midi));
+    }
+    format!("[ {} ]", notes.join(", "))
 }

@@ -48,6 +48,7 @@ impl TheCrucible {
     {
         let (fit, _, g) = Self::anneal_with_sublime(
             genes,
+            crate::science::oracle::DomainContext::Architecture { height: 0.5, stress: 0.5 },
             |genes_slice| (evaluate(genes_slice), 0.0),
             iterations,
         );
@@ -58,6 +59,7 @@ impl TheCrucible {
     /// and optimizes them using Simulated Annealing with Aesthetic Epiphany.
     pub fn anneal_with_sublime<F>(
         mut genes: Vec<Gene>,
+        domain_context: crate::science::oracle::DomainContext,
         mut evaluate: F,
         iterations: usize,
     ) -> (f64, f64, Vec<Gene>)
@@ -65,18 +67,14 @@ impl TheCrucible {
         F: FnMut(&[Gene]) -> (f64, f64),
     {
         println!(
-            "🔥 The Crucible: Igniting Simulated Annealing for {} iterations...",
+            "🔥 [The Crucible] Igniting Dual-Objective Annealing... ({} iterations)",
             iterations
         );
 
         // Consult the Experience Oracle (ENLIGHTEN NeuroEvolution) for prior distribution
         let (initial_temp, bounds_scale) = {
             let mut oracle = crate::science::oracle::get_oracle().lock().unwrap();
-            let context = crate::science::oracle::DomainContext::Architecture {
-                height: 0.5,
-                stress: 0.5,
-            };
-            oracle.predict_prior(context)
+            oracle.predict_prior(domain_context)
         };
 
         let final_temp = 0.001_f64;
