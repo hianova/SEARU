@@ -1,0 +1,206 @@
+version = 3
+
+[assurance]
+mode = "adaptive"
+overall_coverage = 0.90
+critical_coverage = 1.0
+performance_coverage = 0.90
+budget_seconds = 30
+planner = "hybrid"
+fail_on_critical_unknown = true
+
+[providers]
+static = "required"
+mca = "auto"
+coverage = "fallback"
+sanitizer = "fallback"
+concurrency = "fallback"
+profile = "fallback"
+temporal = "auto"
+relational = "auto"
+adversarial = "auto"
+
+[optimization]
+enabled = ["inputs", "atomic", "codegen", "layout"]
+default_budget_seconds = 30
+apply = "never"
+
+[targets]
+discover = "annotations"
+
+[policy.default]
+overall_coverage = 0.90
+critical_coverage = 1.0
+
+[optimization.codegen]
+max_candidates = 32
+
+[optimization.layout]
+max_candidates = 32
+cache_line_bytes = 64
+allow_public_abi_suggestions = false
+
+# Autonomous convergence defaults. This grants workspace apply authority, not
+# git commit/push or external side effects.
+[converge]
+authority = "apply"
+
+[converge.budget]
+wall_time_ms = 30000
+max_iterations = 8
+
+[[target]]
+test = "test_macro_expansion"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "legacy_adapter_is_explicitly_named_and_stable_per_thread"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "deprecated_names_remain_source_compatible_during_migration"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "generated_domains_support_explicit_no_std_registration"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "generated_context_can_be_retained_by_a_no_std_facade"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "generated_capacity_parameters_are_const_and_nonzero"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "generated_cell_binds_snapshot_lifetime_to_domain_guard"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "generated_static_pool_rejects_stale_generation_handles"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "participant_local_state_is_exclusive_and_resets_on_generation_reuse"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "latest_covopt_parameter_syntax_remains_no_std_compatible"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "metadata_does_not_change_or_duplicate_default_evaluation"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "generated_std_tls_guard_reuses_registration_and_reclaims"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "scope_unregisters_after_panic_and_does_not_collect_implicitly"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "generated_std_participant_local_reuses_tls_generation"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "thread_churn_releases_tls_participants_after_collection"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "concurrent_readers_prevent_early_reclamation"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_exp_approx"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_silu_approx"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_exp_approx_edge_cases"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_rsqrt_approx_edge_cases"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_exp_approx"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_silu_approx"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_exp_approx_edge_cases"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_rsqrt_approx_edge_cases"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_vec101_correctness"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_lock_free_mailbox"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_memory_tracker"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_ffi_c_interface"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_tiled_attention"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_stream_interruption"
+expected = "O(1)"
+n_values = "1,100,1000"
+
+[[target]]
+test = "test_neon_gemv_complexity"
+expected = "ON"
+n_values = "1,100,1000"
+

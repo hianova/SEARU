@@ -26,7 +26,7 @@ impl FmSynthesizer {
             let t = i as f64 / sample_rate as f64;
             
             // Envelope (ADSR)
-            let mut env = 0.0;
+            let mut env;
             if t < patch.attack {
                 env = t / patch.attack;
             } else if t < patch.attack + patch.decay {

@@ -79,9 +79,9 @@ impl TheCrucible {
         let final_temp = 0.001_f64;
         let cooling_rate = (final_temp / initial_temp).powf(1.0 / (iterations as f64));
 
-        let (mut current_fitness, mut current_sublime) = evaluate(&genes);
+        let (mut current_fitness, initial_sublime) = evaluate(&genes);
         let mut best_fitness = current_fitness;
-        let mut best_sublime = current_sublime;
+        let mut best_sublime = initial_sublime;
         let mut best_genes = genes.clone();
 
         let mut current_temp = initial_temp;
@@ -122,7 +122,6 @@ impl TheCrucible {
 
                     genes = candidate_genes.clone();
                     current_fitness = candidate_fitness;
-                    current_sublime = candidate_sublime;
                     accepted = true;
                 }
             }
@@ -132,12 +131,11 @@ impl TheCrucible {
                 if candidate_fitness < current_fitness {
                     genes = candidate_genes.clone();
                     current_fitness = candidate_fitness;
-                    current_sublime = candidate_sublime;
                     accepted = true;
 
                     if current_fitness < best_fitness {
                         best_fitness = current_fitness;
-                        best_sublime = current_sublime;
+                        best_sublime = candidate_sublime;
                         best_genes = candidate_genes;
                     }
                 } else {
@@ -147,7 +145,6 @@ impl TheCrucible {
                     if rand::random::<f64>() < acceptance_prob {
                         genes = candidate_genes;
                         current_fitness = candidate_fitness;
-                        current_sublime = candidate_sublime;
                         accepted = true;
                     }
                 }

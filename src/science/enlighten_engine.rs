@@ -51,7 +51,7 @@ impl LiquidKanLayerFast {
             let mut rng = rand::rngs::StdRng::seed_from_u64(42);
             let ptr = w_stream.as_mut_ptr() as *mut Vec101SuperBlock;
             for i in 0..(blocks_per_row * output_dim) {
-                let mut sb: Vec101SuperBlock = unsafe { core::mem::zeroed() };
+                let mut sb: Vec101SuperBlock = core::mem::zeroed();
                 let min_scale = 1i16;
                 let max_scale = 5i16;
                 for s in sb.scales.iter_mut() {

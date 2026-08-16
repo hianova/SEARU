@@ -1,5 +1,5 @@
-#![allow(unused_imports)]
 #![no_std]
+#![allow(unused_imports)]
 
 #[cfg(feature = "std")]
 extern crate std;

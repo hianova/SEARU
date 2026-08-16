@@ -71,7 +71,7 @@ impl EvolutionarySynth {
             }
 
             // 2. ADSR Envelope
-            let mut envelope = 0.0;
+            let mut envelope;
             if i < attack_samples {
                 // Attack phase (linear)
                 envelope = i as f32 / attack_samples.max(1) as f32;

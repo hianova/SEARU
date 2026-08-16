@@ -1,4 +1,4 @@
-
+#![allow(dead_code)]
 mod album;
 mod api;
 mod architecture;
