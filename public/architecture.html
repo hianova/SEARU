@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture Studio :: SEARU</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+</head>
+<body data-page="architecture">
+    <div class="studio-app">
+        <!-- Top App Bar -->
+        <header class="top-bar">
+            <div class="brand-section">
+                <a href="index.html" class="logo-link">
+                    <div class="logo-text">SEARU <span class="badge">STUDIO v2.5</span></div>
+                </a>
+                <div class="tagline">Universal Generative Design & R&D Suite</div>
+            </div>
+
+            <!-- Page Navigation -->
+            <nav class="page-nav">
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">✨</span>
+                    <span class="nav-label">Synesthesia (五感共鳴)</span>
+                </a>
+                <a href="music.html" class="nav-item">
+                    <span class="nav-icon">🎧</span>
+                    <span class="nav-label">Music Studio</span>
+                </a>
+                <a href="architecture.html" class="nav-item active">
+                    <span class="nav-icon">🏛️</span>
+                    <span class="nav-label">Architecture</span>
+                </a>
+                <a href="album.html" class="nav-item">
+                    <span class="nav-icon">💿</span>
+                    <span class="nav-label">Album Release</span>
+                </a>
+            </nav>
+
+            <div class="top-controls">
+                <div class="shortcut-hints">
+                    <span class="kbd-hint"><kbd>Space</kbd> Play</span>
+                    <span class="kbd-hint"><kbd>⌘↵</kbd> Generate</span>
+                </div>
+
+                <div class="server-status">
+                    <span class="status-dot pulse"></span>
+                    <span class="status-text">CRUCIBLE ONLINE</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Studio Body: 3-Column Layout -->
+        <div class="studio-body">
+            
+            <!-- Left Column: Architecture Parameters Inspector -->
+            <aside class="panel panel-inspector">
+                <div class="panel-header">
+                    <h2>SPATIAL & STRUCTURAL</h2>
+                    <span class="sub-badge">FLOORPLAN & MEGACITY</span>
+                </div>
+
+                <div class="inspector-content">
+                    <div class="control-group">
+                        <div class="label-row">
+                            <label for="archDensitySlider">Room Density (Population)</label>
+                            <span class="val-badge" id="archDensityVal">20 Rooms</span>
+                        </div>
+                        <div class="control-row">
+                            <input type="range" id="archDensitySlider" min="5" max="50" step="1" value="20">
+                        </div>
+                        <p class="description">Higher density increases spatial constraint complexity and AABB collision penalties.</p>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="label-row">
+                            <label for="archZoningSlider">Zoning Ratio (Commercial vs Residential)</label>
+                            <span class="val-badge" id="archZoningVal">50% Commercial</span>
+                        </div>
+                        <div class="control-row">
+                            <input type="range" id="archZoningSlider" min="0.0" max="1.0" step="0.05" value="0.5">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="label-row">
+                            <label for="archWindSlider">Environmental Wind Force (Stress Adversary)</label>
+                            <span class="val-badge" id="archWindVal">50.0 F</span>
+                        </div>
+                        <div class="control-row">
+                            <input type="range" id="archWindSlider" min="10" max="150" step="5" value="50">
+                        </div>
+                        <p class="description">Adversarial force applied during Min-Max co-evolution.</p>
+                    </div>
+
+                    <button id="btnGenerateArch" class="btn btn-primary btn-block btn-lg" style="margin-bottom: 12px;">
+                        EVOLVE 2D FLOORPLAN (SVG)
+                    </button>
+
+                    <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 8px 0;">
+
+                    <div class="control-group">
+                        <label for="megaColorPicker">MegaCity PBR Tone (RGB)</label>
+                        <div class="color-picker-row">
+                            <input type="color" id="megaColorPicker" value="#38bdf8">
+                            <span class="val-badge" id="megaColorVal">#38bdf8</span>
+                        </div>
+                    </div>
+
+                    <button id="btnGenerateMegaCity" class="btn btn-outline btn-block">
+                        RUN 10-STAGE MEGACITY CAD PIPELINE
+                    </button>
+
+                    <button id="btnGenerateTruss" class="btn btn-outline btn-block">
+                        OPTIMIZE 2D TRUSS MECHANICS
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Center Column: Dual Viewport (2D SVG Canvas & 3D MegaCity) -->
+            <main class="panel panel-viewport">
+                <div class="viewport-header">
+                    <div class="viewport-title-group">
+                        <h2>INTERACTIVE ARCHITECTURE VIEWPORT</h2>
+                        <span class="viewport-mode-tag" id="viewportTag">2D VECTOR / 3D CAD</span>
+                    </div>
+
+                    <div class="viewport-actions" id="canvasControls">
+                        <button id="btnZoomIn" class="icon-btn" title="Zoom In">+</button>
+                        <button id="btnZoomOut" class="icon-btn" title="Zoom Out">-</button>
+                        <button id="btnResetView" class="icon-btn" title="Reset View">&#x21bb;</button>
+                        <a id="btnDownloadCad" href="/release/megacity.obj" download="megacity.obj" class="btn btn-sm btn-outline" title="Download 3D CAD">Download 3D CAD</a>
+                    </div>
+                </div>
+
+                <div class="viewport-content">
+                    <!-- Visual Container (SVG Mode for Floorplan / Truss) -->
+                    <div class="svg-stage-wrapper" id="svgStageWrapper">
+                        <div class="svg-stage" id="svgStage">
+                            <div class="empty-state">
+                                <div class="empty-icon">🏛️</div>
+                                <div class="empty-text">Click "Evolve 2D Floorplan" to run Min-Max co-evolution</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Column: Telemetry & Exports -->
+            <aside class="panel panel-telemetry">
+                <div class="panel-header">
+                    <h2>TELEMETRY & EXPORTS</h2>
+                    <span class="sub-badge">METRICS</span>
+                </div>
+
+                <div class="telemetry-content">
+                    <div class="telemetry-card">
+                        <div class="card-label">SIMULATED ANNEALING CONVERGENCE</div>
+                        <canvas id="telemetryCanvas" width="300" height="140"></canvas>
+                        <div class="telemetry-stats-grid">
+                            <div class="stat-box"><span class="stat-name">TEMP</span><span class="stat-val" id="statTemp">0.001°</span></div>
+                            <div class="stat-box"><span class="stat-name">LOSS</span><span class="stat-val" id="statLoss">0.000</span></div>
+                            <div class="stat-box"><span class="stat-name">ITERS</span><span class="stat-val" id="statIters">10,000</span></div>
+                            <div class="stat-box"><span class="stat-name">RATE</span><span class="stat-val" id="statRate">99.4%</span></div>
+                        </div>
+                    </div>
+
+                    <div class="export-card">
+                        <div class="card-label">EXPORT BLUEPRINTS</div>
+                        <div class="export-btn-grid">
+                            <button id="btnExportSvg" class="btn btn-export">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                                Vector (.SVG)
+                            </button>
+                            <button id="btnExportJson" class="btn btn-export">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                Profile (.JSON)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="console-card">
+                        <div class="console-header">
+                            <span class="card-label">SPATIAL SOLVER CONSOLE</span>
+                            <button id="btnClearConsole" class="console-clear-btn">CLEAR</button>
+                        </div>
+                        <div class="console-body" id="consoleBody">
+                            <div class="log-line sys">> Architecture & MegaCity Engine loaded.</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <!-- Hidden audio element & Toast container -->
+    <audio id="globalAudio" preload="auto"></audio>
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="app.js"></script>
+</body>
+</html>

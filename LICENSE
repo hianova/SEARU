@@ -1,0 +1,68 @@
+# SEARU Non-Commercial Source License (SEARU-NC)
+Version 1.0 (Based on PolyForm Noncommercial License 1.0.0)
+
+Copyright (c) 2026 SEARU Project Contributors. All rights reserved.
+
+==============================================================================
+繁體中文條款摘要 (非法律正式文本，正式效力以英文條文為準)
+==============================================================================
+本專案（SEARU）採用非商業用途授權。
+1. 您可以免費取得、修改、編譯、執行及研究本專案原始碼，僅限用於「個人學習、學術研究、教育推廣與非營利專案」。
+2. 嚴禁任何形式的「商業營利行為」，包括但不限於：
+   - 將本軟體或其衍生版本作為付費產品、付費 SaaS 雲端服務或收費 API 進行銷售或營運。
+   - 用於商業機構內部之營利用途、產品研發或直接商業交付。
+   - 轉售本軟體生成的 3D CAD、音訊或衍生數位資產以獲取商業利益。
+3. 若有商業授權或企業合作需求，必須事先取得著作權人書面許可。
+
+==============================================================================
+TERMS AND CONDITIONS FOR NON-COMMERCIAL USE
+==============================================================================
+
+## 1. Acceptance
+By using, copying, modifying, distributing, or running the software, you accept 
+and agree to all terms and conditions of this license.
+
+## 2. Permitted Uses (Non-Commercial Purpose)
+The copyright holders grant you a worldwide, royalty-free, non-exclusive, 
+non-transferable copyright license to:
+- (a) Use, run, and execute the software for personal, non-commercial purposes.
+- (b) Study, analyze, and research the software for academic and educational purposes.
+- (c) Modify, adapt, translate, or create derivative works for non-commercial purposes.
+- (d) Distribute verbatim or modified copies of the software to third parties solely 
+      for non-commercial purposes, provided that you include this entire LICENSE file 
+      and retain all copyright notices.
+
+"Non-Commercial Purpose" means any use that is not primarily intended for or directed 
+towards commercial advantage or monetary compensation.
+
+## 3. Prohibited Uses (Commercial Purpose)
+You may NOT use, copy, modify, distribute, host, or sublicense this software or any 
+derivative work for any Commercial Purpose without obtaining a prior written commercial 
+license from the copyright holder.
+
+Prohibited Commercial Purposes include, but are not limited to:
+- (a) Selling, leasing, renting, sublicensing, or charging fees for the software or 
+      derivative works.
+- (b) Using the software to provide a hosted service, Software-as-a-Service (SaaS), 
+      Application Programming Interface (API), or cloud platform to paying customers.
+- (c) Using the software for commercial product manufacturing, engineering delivery, 
+      or architectural fabrication for commercial profit.
+- (d) Commercial distribution, bundled distribution with proprietary software, or 
+      incorporating this software into closed-source commercial applications.
+
+## 4. Attribution
+Any distribution of the software, derivative works, or publications referencing this work 
+must retain all original copyright notices, this license agreement, and include clear attribution:
+"Powered by SEARU Generative Design & R&D Engine".
+
+## 5. Commercial Inquiries
+For commercial licensing, enterprise integration, or proprietary exemptions, please contact 
+the project maintainers.
+
+## 6. Disclaimer of Warranty
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE 
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+DEALINGS IN THE SOFTWARE.

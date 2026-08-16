@@ -213,20 +213,6 @@ impl<T: Clone + Send + Sync> AssemblyFunnel<T> {
             // ========================================================
             let mut tier1_candidates = Vec::with_capacity(self.config.tier1_population);
 
-            if self.config.use_diffusion {
-                let diffusion_engine =
-                    crate::science::discrete_diffusion::DiscreteDiffusionEngine::default();
-
-                // Generate 50% of candidates via Diffusion (from pure noise)
-                let num_diffused = self.config.tier1_population / 2;
-                seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
-                let mut diffused_candidates = diffusion_engine.generate_parallel_canvas(
-                    objective,
-                    num_diffused,
-                    seed as usize,
-                );
-                tier1_candidates.append(&mut diffused_candidates);
-            }
 
             while tier1_candidates.len() < self.config.tier1_population {
                 global_iterations += 1;
@@ -577,6 +563,10 @@ impl StandardObserver {
     pub fn with_generation_log(mut self, val: bool) -> Self {
         self.log_gen = val;
         self
+    }
+
+    pub fn get_history_deltas(&self) -> Vec<f64> {
+        vec![]
     }
 }
 

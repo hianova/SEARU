@@ -79,8 +79,6 @@ impl Orchestrator {
     ) -> Vec<BarScore> {
         let (energy, density, tension, anti_drop) = Self::evaluate_macro_curves(bars, energy_curve);
 
-        let mut chord_history = vec![seed_chord.to_vec()];
-        let mut cost_scores = vec![0.0];
         let mut track_score = Vec::with_capacity(bars);
 
         let empty_step = StepEvent {

@@ -69,7 +69,7 @@ impl EvolutionaryComposer {
         tonic_chord: &[f64],
         profile: &crate::profile::ArtistProfile,
     ) -> Vec<f64> {
-        println!("🪐 Scale Engine: Evolving alien pentatonic scale...");
+        println!("🎵 Scale Engine: Generating 5-note melodic scale...");
 
         let root = tonic_chord[0];
         let mut genes = vec![];
@@ -125,7 +125,7 @@ impl EvolutionaryComposer {
         }
         scale.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        println!("✅ Alien Scale Discovered: {:?}", scale);
+        println!("✅ Scale Generated: {:?}", scale);
         scale
     }
 

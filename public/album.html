@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Album Release :: SEARU</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body data-page="album">
+    <div class="studio-app">
+        <!-- Top App Bar -->
+        <header class="top-bar">
+            <div class="brand-section">
+                <a href="index.html" class="logo-link">
+                    <div class="logo-text">SEARU <span class="badge">STUDIO v2.5</span></div>
+                </a>
+                <div class="tagline">Universal Generative Design & R&D Suite</div>
+            </div>
+
+            <!-- Page Navigation -->
+            <nav class="page-nav">
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">✨</span>
+                    <span class="nav-label">Synesthesia (五感共鳴)</span>
+                </a>
+                <a href="music.html" class="nav-item">
+                    <span class="nav-icon">🎧</span>
+                    <span class="nav-label">Music Studio</span>
+                </a>
+                <a href="architecture.html" class="nav-item">
+                    <span class="nav-icon">🏛️</span>
+                    <span class="nav-label">Architecture</span>
+                </a>
+                <a href="album.html" class="nav-item active">
+                    <span class="nav-icon">💿</span>
+                    <span class="nav-label">Album Release</span>
+                </a>
+            </nav>
+
+            <div class="top-controls">
+                <div class="shortcut-hints">
+                    <span class="kbd-hint"><kbd>Space</kbd> Play</span>
+                </div>
+
+                <div class="server-status">
+                    <span class="status-dot pulse"></span>
+                    <span class="status-text">CRUCIBLE ONLINE</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Studio Body: 3-Column Layout -->
+        <div class="studio-body">
+            
+            <!-- Left Column: Album Batch Release Inspector -->
+            <aside class="panel panel-inspector">
+                <div class="panel-header">
+                    <h2>BATCH PRODUCTION</h2>
+                    <span class="sub-badge">RAYON MULTI-THREAD</span>
+                </div>
+
+                <div class="inspector-content">
+                    <div class="control-group">
+                        <label>Multi-Threaded Parallel Pipeline</label>
+                        <p class="description">
+                            Spawns Rayon CPU worker pool to compose, synthesize, and export 10 complete 3-minute tracks in parallel with WAV audio, MIDI scores, and generative album cover art.
+                        </p>
+                    </div>
+
+                    <button id="btnTriggerAlbum" class="btn btn-primary btn-block btn-lg" style="margin-top: 10px;">
+                        RELEASE 10-TRACK ALBUM
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Center Column: Album Catalog & Player -->
+            <main class="panel panel-viewport">
+                <div class="viewport-header">
+                    <div class="viewport-title-group">
+                        <h2>RELEASE CATALOG & STREAMER</h2>
+                        <span class="viewport-mode-tag">RELEASE DIRECTORY (/release)</span>
+                    </div>
+                </div>
+
+                <div class="viewport-content">
+                    <div class="audio-stage-wrapper">
+                        <!-- Spectrum Card -->
+                        <div class="spectrum-card">
+                            <canvas id="spectrumCanvas" width="700" height="200"></canvas>
+                            <div class="spectrum-overlay">
+                                <span class="spectrum-label">ALBUM STREAMER DSP SPECTRUM</span>
+                                <span class="spectrum-fps">44.1 kHz / 32-bit Float</span>
+                            </div>
+                        </div>
+
+                        <!-- Player Widget -->
+                        <div class="player-widget">
+                            <div class="track-meta">
+                                <div class="track-title" id="playerTrackTitle">Album Master Player</div>
+                                <div class="track-details" id="playerTrackDetails">Select a track below to stream</div>
+                            </div>
+
+                            <div class="player-timeline">
+                                <span class="time-display" id="playerCurrentTime">0:00</span>
+                                <input type="range" id="playerSeekSlider" min="0" max="100" value="0" step="0.1" class="seek-slider">
+                                <span class="time-display" id="playerTotalTime">0:00</span>
+                            </div>
+
+                            <div class="player-controls">
+                                <button id="playerPlayBtn" class="btn btn-play">
+                                    <svg id="playIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    <svg id="pauseIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                                </button>
+                                
+                                <div class="volume-control">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                    <input type="range" id="playerVolumeSlider" min="0" max="1" step="0.05" value="0.8" class="vol-slider">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Album Tracklist Card -->
+                        <div class="album-tracklist-card" id="albumTracklistCard" style="display: flex;">
+                            <h3>RELEASED TRACKS IN CATALOG</h3>
+                            <div class="track-list" id="albumTrackList">
+                                <div class="track-item placeholder">Loading catalog...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Column: Telemetry & Status -->
+            <aside class="panel panel-telemetry">
+                <div class="panel-header">
+                    <h2>CATALOG TELEMETRY</h2>
+                    <span class="sub-badge">RAYON STATS</span>
+                </div>
+
+                <div class="telemetry-content">
+                    <div class="telemetry-card">
+                        <div class="card-label">SIMULATED ANNEALING CONVERGENCE</div>
+                        <canvas id="telemetryCanvas" width="300" height="140"></canvas>
+                        <div class="telemetry-stats-grid">
+                            <div class="stat-box"><span class="stat-name">TEMP</span><span class="stat-val" id="statTemp">0.001°</span></div>
+                            <div class="stat-box"><span class="stat-name">LOSS</span><span class="stat-val" id="statLoss">0.000</span></div>
+                            <div class="stat-box"><span class="stat-name">ITERS</span><span class="stat-val" id="statIters">10,000</span></div>
+                            <div class="stat-box"><span class="stat-name">RATE</span><span class="stat-val" id="statRate">99.4%</span></div>
+                        </div>
+                    </div>
+
+                    <div class="console-card">
+                        <div class="console-header">
+                            <span class="card-label">CATALOG LOGS</span>
+                            <button id="btnClearConsole" class="console-clear-btn">CLEAR</button>
+                        </div>
+                        <div class="console-body" id="consoleBody">
+                            <div class="log-line sys">> Album Catalog Module online.</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <!-- Hidden audio element & Toast container -->
+    <audio id="globalAudio" preload="auto"></audio>
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="app.js"></script>
+</body>
+</html>

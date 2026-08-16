@@ -1,6 +1,6 @@
 use crate::music::dsp::effects::Effects;
 use crate::music::dsp::evo_synth::EvolutionarySynth;
-use crate::music::dsp::synth::DrumMachine;
+
 use crate::music::melody::MelodyEngine;
 use crate::music::mix_evolver::MixEvolver;
 use crate::music::orchestrator::Orchestrator;
@@ -35,19 +35,19 @@ impl Arranger {
         let mut master_track = vec![0.0; total_samples];
 
         // --- 1. CONTINUOUS ORCHESTRATION ---
-        println!("🧠 Generating Continuous Score Matrix...");
+        println!("⚙️ Generating Continuous Score Matrix...");
         let base_score = Orchestrator::orchestrate_track(seed_chord, bars, energy_curve, profile);
         let rhythmic_score = RhythmEngine::generate_rhythm(base_score, profile);
         let track_score = MelodyEngine::generate_melody(rhythmic_score, profile);
 
         // --- 2. EVOLUTIONARY TIMBRES ---
-        println!("🧬 Evolving Timbre Space...");
+        println!("⚙️ Optimizing Timbre Space...");
         let bass_profile = TimbreEvolver::evolve_instrument(InstrumentType::Bass);
         let pad_profile = TimbreEvolver::evolve_instrument(InstrumentType::Pad);
         let arp_profile = TimbreEvolver::evolve_instrument(InstrumentType::Arp);
         let lead_profile = TimbreEvolver::evolve_instrument(InstrumentType::Lead);
 
-        println!("🎚️ Evolving Cinematic Mix Spaces...");
+        println!("🎚️ Optimizing Mix Parameters...");
         let pink_mix = MixEvolver::evolve_mix(
             &bass_profile,
             &pad_profile,
@@ -208,28 +208,28 @@ impl Arranger {
                     }
                 }
 
-                // Kick
+                // Kick (Placeholder sine burst for now since DrumMachine is removed)
                 if score.kick[step].velocity > 0.0 {
                     let jitter = rng.random_range(0.0..0.01);
                     let actual_start = step_start + (jitter * sample_rate as f32) as usize;
-                    let kick = DrumMachine::kick(seconds_per_16th * 2.0, sample_rate);
-                    for i in 0..kick.len() {
+                    for i in 0..1000 {
                         if actual_start + i < samples_per_bar {
-                            drum_audio[actual_start + i] +=
-                                kick[i] * dynamic_vol_kick * score.kick[step].velocity;
+                            let env = 1.0 - (i as f32 / 1000.0);
+                            let t = i as f32 / sample_rate as f32;
+                            drum_audio[actual_start + i] += (t * 100.0 * 2.0 * std::f32::consts::PI).sin() * env * dynamic_vol_kick * score.kick[step].velocity;
                         }
                     }
                 }
 
-                // HiHat
+                // HiHat (Placeholder noise burst)
                 if score.hat[step].velocity > 0.0 {
                     let jitter = rng.random_range(0.0..0.02);
                     let actual_start = step_start + (jitter * sample_rate as f32) as usize;
-                    let hat = DrumMachine::hihat(seconds_per_16th, sample_rate);
-                    for i in 0..hat.len() {
+                    for i in 0..500 {
                         if actual_start + i < samples_per_bar {
-                            drum_audio[actual_start + i] +=
-                                hat[i] * dynamic_vol_hat * score.hat[step].velocity;
+                            let env = 1.0 - (i as f32 / 500.0);
+                            let noise = rng.random_range(-1.0..1.0);
+                            drum_audio[actual_start + i] += noise * env * dynamic_vol_hat * score.hat[step].velocity;
                         }
                     }
                 }
@@ -270,7 +270,7 @@ impl Arranger {
             }
         }
 
-        println!("🌌 Igniting Chaotic Acoustic Space (Environmental Reverb)...");
+        println!("🔊 Applying Environmental Reverb...");
         let final_track = Effects::process_reverb(&master_track, 0.2, 0.95, 0.2);
 
         Self::generate_analytics_chart(bars, energy_curve, &dissonance_log, &anti_drop_events);

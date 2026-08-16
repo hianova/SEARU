@@ -3,6 +3,7 @@ pub struct Node {
     pub x: f64,
     pub y: f64,
     pub fixed: bool,
+    pub force_x: f64,
     pub force_y: f64,
 }
 

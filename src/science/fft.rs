@@ -384,7 +384,7 @@ mod tests {
         // Generate a 100Hz sine wave
         for i in 0..256 {
             let t = (i as f32) / sample_rate;
-            let val = (2.0 * 3.1415926 * 100.0 * t).sin() * 30000.0;
+            let val = (2.0 * std::f32::consts::PI * 100.0 * t).sin() * 30000.0;
             samples[i] = val as i16;
         }
 

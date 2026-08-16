@@ -62,4 +62,20 @@ impl TrussExporter {
         file.write_all(content.as_bytes())?;
         Ok(())
     }
+
+    pub fn to_obj_string(truss: &Truss) -> String {
+        let mut out = String::new();
+        out.push_str("# SEARU Generated Truss\n");
+
+        for node in &truss.nodes {
+            out.push_str(&format!("v {:.3} {:.3} 0.000\n", node.x, node.y));
+        }
+
+        for bar in &truss.bars {
+            // OBJ vertices are 1-indexed
+            out.push_str(&format!("l {} {}\n", bar.node_a + 1, bar.node_b + 1));
+        }
+
+        out
+    }
 }

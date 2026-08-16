@@ -10,6 +10,18 @@ pub struct Room {
     pub h: f64,
 }
 
+impl Room {
+    pub fn new(name: impl Into<String>, x: f64, y: f64, w: f64, h: f64) -> Self {
+        Self {
+            name: name.into(),
+            x: x.max(0.0),
+            y: y.max(0.0),
+            w: w.max(1.0),
+            h: h.max(1.0),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ArchCandidate {
     pub rooms: Vec<Room>,

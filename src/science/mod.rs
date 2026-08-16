@@ -1,27 +1,19 @@
 pub mod assembly_funnel;
-pub mod auto_research;
 pub mod chaos_runner;
 pub mod chaos_swarm;
 pub mod chaos_state;
 pub mod coevolution_context;
 pub mod crucible;
-pub mod discrete_diffusion;
-pub mod dynamic_laws;
-pub mod emergent_objective;
 pub mod enlighten_engine;
-pub mod math_objective;
-pub mod motif_tree;
 pub mod oracle;
 pub mod fft;
-pub mod flu;
-pub mod robotics;
-pub mod photonics;
 pub mod multidomain_fuzz;
 pub mod universal_objective;
+pub mod resonance_objective;
+pub mod aerodynamic_objective;
+pub mod topology_isolation_objective;
+pub mod metamaterial_objective;
 
-pub use assembly_funnel::{AssemblyFunnel, FunnelObserver};
-pub use chaos_runner::ChaosRunner;
-pub use math_objective::*;
 
 pub trait ScienceObjective<T: Clone + Send + Sync>: Sync {
     fn evaluate_fitness(&self, candidate: &T) -> (u32, u32);

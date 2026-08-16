@@ -90,7 +90,7 @@ impl FmOptimizer {
                 let inharmonicity = (min_dist_to_harmonic / 0.5).min(1.0);
                 current_diss += inharmonicity * 0.6;
 
-                ((current_diss - target_dissonance).powi(2) * 10000.0)
+                (current_diss - target_dissonance).powi(2) * 10000.0 
             },
             2000,
         );

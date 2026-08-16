@@ -1,6 +1,5 @@
 use crate::science::ScienceObjective;
 use crate::science::assembly_funnel::{AssemblyFunnel, FunnelConfig};
-use crate::science::auto_research::{AutoResearchConfig, AutoResearcher};
 use std::time::SystemTime;
 
 pub struct ChaosRunner;
@@ -13,11 +12,7 @@ impl ChaosRunner {
     ) {
         println!("Initializing Chaos Engine...");
 
-        let config_ar = AutoResearchConfig {
-            mode: "Dual".to_string(),
-        };
-
-        let mut observer = AutoResearcher::new(config_ar).with_generation_log(true);
+        let mut observer = crate::science::assembly_funnel::StandardObserver::new("").with_generation_log(true);
 
         println!("Igniting ModelGo AutoResearcher... {}", description);
 
@@ -57,10 +52,7 @@ impl ChaosRunner {
         config: FunnelConfig,
         description: &str,
     ) -> (crate::science::assembly_funnel::EvolutionResult, Option<T>) {
-        let config_ar = AutoResearchConfig {
-            mode: "Dual".to_string(),
-        };
-        let mut observer = AutoResearcher::new(config_ar).with_generation_log(true);
+        let mut observer = crate::science::assembly_funnel::StandardObserver::new("").with_generation_log(true);
         println!("Igniting Tunable Chaos Engine... {}", description);
 
         let mut funnel = AssemblyFunnel::new(config);

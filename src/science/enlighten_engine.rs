@@ -1,6 +1,3 @@
-use std::sync::Arc;
-use vec101::core::ComputeContextBuilder;
-use vec101::core::QuantType;
 use vec101::core::Vec101SuperBlock;
 
 /// Liquid Node (液態節點)：結合連續時間常微分方程 (ODE) 的神經元。
@@ -50,13 +47,11 @@ impl LiquidKanLayerFast {
         let mut w_stream = vec![0u8; w_stream_len];
 
         unsafe {
-            let sb_slice = std::slice::from_raw_parts_mut(
-                w_stream.as_mut_ptr() as *mut Vec101SuperBlock,
-                blocks_per_row * output_dim,
-            );
             use rand::{Rng, SeedableRng};
             let mut rng = rand::rngs::StdRng::seed_from_u64(42);
-            for sb in sb_slice.iter_mut() {
+            let ptr = w_stream.as_mut_ptr() as *mut Vec101SuperBlock;
+            for i in 0..(blocks_per_row * output_dim) {
+                let mut sb: Vec101SuperBlock = unsafe { core::mem::zeroed() };
                 let min_scale = 1i16;
                 let max_scale = 5i16;
                 for s in sb.scales.iter_mut() {
@@ -73,6 +68,7 @@ impl LiquidKanLayerFast {
                         *w = rng.random();
                     }
                 }
+                std::ptr::write_unaligned(ptr.add(i), sb);
             }
         }
         let s_stream = vec![1; output_dim];

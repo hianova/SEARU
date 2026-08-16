@@ -1,7 +1,6 @@
 //! The generic Crucible for optimizing any parameter space via Monte Carlo Annealing.
 
 use serde::Serialize;
-use std::collections::HashMap;
 use std::sync::OnceLock;
 use tokio::sync::broadcast;
 
@@ -67,11 +66,11 @@ impl TheCrucible {
         F: FnMut(&[Gene]) -> (f64, f64),
     {
         println!(
-            "🔥 [The Crucible] Igniting Dual-Objective Annealing... ({} iterations)",
+            "🔥 [Optimizer] Running multi-objective simulated annealing ({} iterations)...",
             iterations
         );
 
-        // Consult the Experience Oracle (ENLIGHTEN NeuroEvolution) for prior distribution
+        // Consult dynamic prior distribution
         let (initial_temp, bounds_scale) = {
             let mut oracle = crate::science::oracle::get_oracle().lock().unwrap();
             oracle.predict_prior(domain_context)
@@ -96,7 +95,6 @@ impl TheCrucible {
 
             // Perturb genes
             for gene in candidate_genes.iter_mut() {
-                // Apply bounds scaling predicted by LLM
                 let range = gene.bounds.1 - gene.bounds.0;
                 let max_step = range * (current_temp / initial_temp).max(0.05) * bounds_scale;
                 let step = (rand::random::<f64>() - 0.5) * max_step;
@@ -108,19 +106,18 @@ impl TheCrucible {
             let mut is_epiphany = false;
             let mut accepted = false;
 
-            // 1. Check for Aesthetic Epiphany (Happy Accidents)
-            // Epiphany requires BOTH High Novelty AND High Sublime Metric!
+            // 1. Check for exploration breakthrough (High novelty & harmony)
             if candidate_fitness > current_fitness {
                 let novelty = Self::compute_novelty(&history, &candidate_genes);
-                let novelty_threshold = 0.3; // Lowered slightly since Sublime is doing the heavy lifting
-                let sublime_threshold = 0.8; // Must be highly symmetrical/elegant
+                let novelty_threshold = 0.3;
+                let sublime_threshold = 0.8;
 
                 if novelty > novelty_threshold
                     && candidate_sublime > sublime_threshold
                     && rand::random::<f64>() < 0.10
                 {
                     is_epiphany = true;
-                    // Re-heat the crucible to explore this novel region!
+                    // Re-heat temperature to explore new region!
                     current_temp = (current_temp * 5.0).min(initial_temp);
 
                     genes = candidate_genes.clone();

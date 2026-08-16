@@ -1,5 +1,4 @@
 use crate::science::assembly_funnel::{AssemblyFunnel, EvolutionResult, FunnelConfig};
-use crate::science::auto_research::{AutoResearchConfig, AutoResearcher};
 use crate::science::ScienceObjective;
 use std::thread;
 
@@ -14,7 +13,7 @@ impl ChaosSwarm {
         epoch_size: u64,
         num_epochs: usize,
     ) -> (EvolutionResult, Option<T>) {
-        println!("🌌 [ChaosSwarm] Igniting Spectral Swarm Topology...");
+        println!("🌌 [SwarmOptimizer] Initializing Particle Swarm Optimization...");
         println!("   -> Objective: {}", description);
         println!("   -> Islands: {}, Epoch Size: {}, Total Epochs: {}", num_islands, epoch_size, num_epochs);
 
@@ -24,7 +23,7 @@ impl ChaosSwarm {
         let mut final_result = EvolutionResult::Success((u32::MAX, 0));
 
         for epoch in 0..num_epochs {
-            println!("\n🌀 [ChaosSwarm] --- Epoch {}/{} ---", epoch + 1, num_epochs);
+            println!("\n🌀 [SwarmOptimizer] --- Iteration {}/{} ---", epoch + 1, num_epochs);
             
             // Adjust hard_limit_gen for the epoch so run_evolution_loop terminates after epoch_size
             let epoch_config = FunnelConfig {
@@ -54,11 +53,7 @@ impl ChaosSwarm {
                     let injected_elites = global_archive.elites.clone();
                     
                     let handle = s.spawn(move || {
-                        let config_ar = AutoResearchConfig {
-                            mode: format!("Island-{}", i),
-                        };
-                        let mut observer = AutoResearcher::new(config_ar).with_generation_log(false);
-                        observer.prefix = format!("[Island-{}]", i);
+                        let mut observer = crate::science::assembly_funnel::StandardObserver::new(&format!("[Island-{}]", i)).with_generation_log(false);
                         
                         let mut funnel = AssemblyFunnel::new(island_config);
                         
@@ -94,7 +89,7 @@ impl ChaosSwarm {
             });
             
             let current_best = global_archive.elites.iter().min_by_key(|e| e.0).map(|e| e.0).unwrap_or(u32::MAX);
-            println!("🌐 [ChaosSwarm] Epoch Complete. Merged Archives. Global Best: {}", current_best);
+            println!("🌐 [SwarmOptimizer] Iteration Complete. Merged Archives. Global Best: {}", current_best);
 
             // --- Spectral Stagnation Analysis ---
             // Take the history of the first island (or average them) for FFT
@@ -122,11 +117,10 @@ impl ChaosSwarm {
                 println!("📊 [Spectral Analysis] LowFreq Power: {:.2}, HighFreq Power: {:.2}", low_power, high_power);
 
                 if low_power > high_power * 10.0 && current_best > config.hard_limit_score {
-                    println!("🚨 [Paradigm Shift] Spectral Stagnation Detected!");
-                    println!("🚨 The convergence curve is too smooth and flat. Stuck in a deep local minimum.");
-                    println!("🚨 Triggering QUANTUM TUNNELING (Mass Extinction) for the next epoch!");
-                    // We don't wipe the global_archive, but we could artificially jump the RNG seed significantly
-                    // or modify the config to force diffusion
+                    println!("🔄 [Adaptive Optimizer] Convergence stagnation detected.");
+                    println!("🔄 The convergence curve is flat. Stuck in a local minimum.");
+                    println!("🔄 Increasing population diversity and enabling diffusion for the next epoch.");
+                    // Reset exploration settings
                     config.use_diffusion = true;
                     config.tier1_population *= 2; // Temporarily double population to explore wider
                 } else {
@@ -137,7 +131,7 @@ impl ChaosSwarm {
             }
         }
 
-        println!("\n🌌 [ChaosSwarm] Swarm Evolution Complete. Final Best Score: {}", best_score_overall);
+        println!("\n✨ [Swarm Optimizer] Evolution run completed. Final Best Score: {}", best_score_overall);
         let best_t = global_archive.elites.iter().min_by_key(|e| e.0).map(|e| e.2.clone());
         (final_result, best_t)
     }

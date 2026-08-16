@@ -86,7 +86,7 @@ impl MixEvolver {
         let hat_high = 1.0 * Self::a_weight(4000.0); // MASSIVELY penalized by human ear
 
         // REVERTED to completely free bounds (0.001 to 1.5). Let the physics handle the limitation!
-        let mut genes = vec![
+        let genes = vec![
             Gene {
                 name: "vol_bass".to_string(),
                 bounds: (0.001, 1.5),

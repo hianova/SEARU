@@ -1,13 +1,13 @@
 /**
  * ==========================================================================
- * SEARU Studio v2.5 - Core Client Application
- * Full-stack Audio DSP, Multi-Domain Annealing, SVG Pan/Zoom & Telemetry
+ * SEARU Studio v2.5 - Core Multi-Page Client Application
+ * Handles Synesthesia 3D, Music Studio DSP, Architecture Viewport & Album Catalog
  * ==========================================================================
  */
 
 // --- State Management ---
 const studioState = {
-    activeDomain: 'music',
+    activePage: document.body.dataset.page || 'synesthesia',
     currentAudioBlob: null,
     currentSvgString: null,
     currentMidiBlob: null,
@@ -35,18 +35,26 @@ const studioState = {
 
 // --- DOM Elements Cache ---
 const DOM = {
-    tabs: document.querySelectorAll('.tab-btn'),
-    forms: document.querySelectorAll('.domain-form'),
-    inspectorTitle: document.getElementById('inspectorTitle'),
-    inspectorBadge: document.getElementById('inspectorDomainBadge'),
+    // Top Controls
+    topExportProfileBtn: document.getElementById('exportProfileBtn'),
+    presetSelect: document.getElementById('presetSelect'),
     
     // Viewport elements
     viewportTitle: document.getElementById('viewportTitle'),
     viewportTag: document.getElementById('viewportTag'),
     svgStageWrapper: document.getElementById('svgStageWrapper'),
     svgStage: document.getElementById('svgStage'),
+    synesthesiaStageWrapper: document.getElementById('synesthesiaStageWrapper'),
     audioStageWrapper: document.getElementById('audioStageWrapper'),
     canvasControls: document.getElementById('canvasControls'),
+    synControls: document.getElementById('synControls'),
+    synModelViewer: document.getElementById('synModelViewer'),
+    synAudioPlayer: document.getElementById('synAudioPlayer'),
+    btnAutoRotate: document.getElementById('btnAutoRotate'),
+    btnDownloadObj: document.getElementById('btnDownloadObj'),
+    btnDownloadWav: document.getElementById('btnDownloadWav'),
+    synDockTitle: document.getElementById('synDockTitle'),
+    synDockMeta: document.getElementById('synDockMeta'),
     
     // Audio Player elements
     audio: document.getElementById('globalAudio'),
@@ -77,21 +85,31 @@ const DOM = {
     exportMidiBtn: document.getElementById('btnExportMidi'),
     exportSvgBtn: document.getElementById('btnExportSvg'),
     exportJsonBtn: document.getElementById('btnExportJson'),
-    topExportProfileBtn: document.getElementById('exportProfileBtn'),
-    presetSelect: document.getElementById('presetSelect'),
+    
+    // Synesthesia Controls
+    btnGenSyn: document.getElementById('btnGenerateSynesthesia'),
+    synSpinner: document.getElementById('synSpinner'),
+    synAggressionSlider: document.getElementById('synAggressionSlider'),
+    synEleganceSlider: document.getElementById('synEleganceSlider'),
+    synDensitySlider: document.getElementById('synDensitySlider'),
+    synIndustrialismSlider: document.getElementById('synIndustrialismSlider'),
+    synAggressionVal: document.getElementById('synAggressionVal'),
+    synEleganceVal: document.getElementById('synEleganceVal'),
+    synDensityVal: document.getElementById('synDensityVal'),
+    synIndustrialismVal: document.getElementById('synIndustrialismVal'),
     
     // Domain action buttons
     btnGenMusic: document.getElementById('btnGenerateMusic'),
     btnGenFm: document.getElementById('btnGenerateFm'),
     fmDissonanceSlider: document.getElementById('fmDissonanceSlider'),
     fmDissonanceVal: document.getElementById('fmDissonanceVal'),
+    musicRootSelect: document.getElementById('musicRootSelect'),
+    musicChordsSlider: document.getElementById('musicChordsSlider'),
+    musicDissonanceSlider: document.getElementById('musicDissonanceSlider'),
     btnGenArch: document.getElementById('btnGenerateArch'),
     btnGenTruss: document.getElementById('btnGenerateTruss'),
-    btnGenPcb: document.getElementById('btnGeneratePcb'),
-    btnGenVisual: document.getElementById('btnGenerateVisual'),
     btnGenMegaCity: document.getElementById('btnGenerateMegaCity'),
-    btnGenFractal: document.getElementById('btnGenerateFractal'),
-    btnGenFuzz: document.getElementById('btnGenerateFuzz'),
+    megaDensitySlider: document.getElementById('megaDensitySlider'),
     btnTriggerAlbum: document.getElementById('btnTriggerAlbum'),
     albumCard: document.getElementById('albumTracklistCard'),
     albumTrackList: document.getElementById('albumTrackList'),
@@ -102,8 +120,25 @@ const DOM = {
     btnResetView: document.getElementById('btnResetView')
 };
 
+// --- Toast System ---
+function showToast(msg, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerText = msg;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3200);
+}
+
 // --- Logger Utility ---
 function log(msg, type = 'info') {
+    if (!DOM.consoleBody) return;
     const line = document.createElement('div');
     line.className = `log-line ${type}`;
     const time = new Date().toLocaleTimeString();
@@ -112,19 +147,21 @@ function log(msg, type = 'info') {
     DOM.consoleBody.scrollTop = DOM.consoleBody.scrollHeight;
 }
 
-DOM.clearConsoleBtn.addEventListener('click', () => {
-    DOM.consoleBody.innerHTML = '';
-    log('Console cleared.', 'sys');
+DOM.clearConsoleBtn?.addEventListener('click', () => {
+    if (DOM.consoleBody) {
+        DOM.consoleBody.innerHTML = '';
+        log('Console cleared.', 'sys');
+    }
 });
 
-// --- Web Audio & Visualizer Engine ---
+// --- Web Audio & Spectrum Analyzer ---
 let audioCtx = null;
 let analyser = null;
 let audioSource = null;
 let isAudioInitialized = false;
 
 function initWebAudio() {
-    if (isAudioInitialized) return;
+    if (isAudioInitialized || !DOM.audio) return;
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
@@ -138,14 +175,14 @@ function initWebAudio() {
         
         isAudioInitialized = true;
         drawSpectrum();
-        log('Web Audio DSP pipeline hooked to AnalyserNode.', 'sys');
+        log('Web Audio DSP pipeline connected to AnalyserNode.', 'sys');
     } catch (e) {
-        console.warn('Web Audio init error:', e);
+        console.warn('Web Audio init:', e);
     }
 }
 
 function drawSpectrum() {
-    if (!analyser) return;
+    if (!analyser || !DOM.spectrumCanvas) return;
     const canvas = DOM.spectrumCanvas;
     const ctx = canvas.getContext('2d');
     const bufferLength = analyser.frequencyBinCount;
@@ -158,7 +195,7 @@ function drawSpectrum() {
         ctx.fillStyle = '#020617';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw background grid lines
+        // Background grid lines
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
         ctx.lineWidth = 1;
         for (let x = 0; x < canvas.width; x += 40) {
@@ -190,7 +227,7 @@ function drawSpectrum() {
 }
 
 // --- Audio Player Controls ---
-DOM.playBtn.addEventListener('click', async () => {
+DOM.playBtn?.addEventListener('click', async () => {
     initWebAudio();
     if (audioCtx && audioCtx.state === 'suspended') {
         await audioCtx.resume();
@@ -198,8 +235,8 @@ DOM.playBtn.addEventListener('click', async () => {
     
     if (DOM.audio.paused) {
         if (!DOM.audio.src) {
-            log('No audio loaded. Generating default Bach progression...', 'info');
-            generateBachAudio();
+            log('No audio loaded. Generating track...', 'info');
+            generateFullMusic();
             return;
         }
         DOM.audio.play();
@@ -208,33 +245,35 @@ DOM.playBtn.addEventListener('click', async () => {
     }
 });
 
-DOM.audio.addEventListener('play', () => {
-    DOM.playIcon.style.display = 'none';
-    DOM.pauseIcon.style.display = 'block';
+DOM.audio?.addEventListener('play', () => {
+    if (DOM.playIcon) DOM.playIcon.style.display = 'none';
+    if (DOM.pauseIcon) DOM.pauseIcon.style.display = 'block';
 });
 
-DOM.audio.addEventListener('pause', () => {
-    DOM.playIcon.style.display = 'block';
-    DOM.pauseIcon.style.display = 'none';
+DOM.audio?.addEventListener('pause', () => {
+    if (DOM.playIcon) DOM.playIcon.style.display = 'block';
+    if (DOM.pauseIcon) DOM.pauseIcon.style.display = 'none';
 });
 
-DOM.audio.addEventListener('timeupdate', () => {
+DOM.audio?.addEventListener('timeupdate', () => {
     if (!isNaN(DOM.audio.duration) && DOM.audio.duration > 0) {
         const perc = (DOM.audio.currentTime / DOM.audio.duration) * 100;
-        DOM.seekSlider.value = perc;
-        DOM.curTimeText.innerText = formatTime(DOM.audio.currentTime);
-        DOM.totTimeText.innerText = formatTime(DOM.audio.duration);
+        if (DOM.seekSlider) DOM.seekSlider.value = perc;
+        if (DOM.curTimeText) DOM.curTimeText.innerText = formatTime(DOM.audio.currentTime);
+        if (DOM.totTimeText) DOM.totTimeText.innerText = formatTime(DOM.audio.duration);
     }
 });
 
-DOM.seekSlider.addEventListener('input', (e) => {
-    if (!isNaN(DOM.audio.duration)) {
+DOM.seekSlider?.addEventListener('input', (e) => {
+    if (DOM.audio && !isNaN(DOM.audio.duration)) {
         DOM.audio.currentTime = (parseFloat(e.target.value) / 100) * DOM.audio.duration;
     }
 });
 
-DOM.volSlider.addEventListener('input', (e) => {
-    DOM.audio.volume = parseFloat(e.target.value);
+DOM.volSlider?.addEventListener('input', (e) => {
+    if (DOM.audio) {
+        DOM.audio.volume = parseFloat(e.target.value);
+    }
 });
 
 function formatTime(sec) {
@@ -248,45 +287,50 @@ function loadAndPlayAudioBlob(blob, title, details) {
     initWebAudio();
     studioState.currentAudioBlob = blob;
     const url = URL.createObjectURL(blob);
-    DOM.audio.src = url;
-    DOM.audio.load();
-    DOM.audio.play().catch(e => console.log('Autoplay policy prevented audio play:', e));
+    if (DOM.audio) {
+        DOM.audio.src = url;
+        DOM.audio.load();
+        DOM.audio.play().catch(e => console.log('Autoplay prevented:', e));
+    }
     
-    DOM.trackTitle.innerText = title;
-    DOM.trackDetails.innerText = details;
+    if (DOM.trackTitle) DOM.trackTitle.innerText = title;
+    if (DOM.trackDetails) DOM.trackDetails.innerText = details;
     log(`Synthesized: ${title} (${(blob.size / 1024).toFixed(1)} KB)`, 'success');
+    showToast(`Synthesized ${title}`, 'success');
 }
 
 // --- SVG Interactive Viewport (Pan & Zoom) ---
 function updateSvgTransform() {
-    DOM.svgStage.style.transform = `translate(${studioState.panX}px, ${studioState.panY}px) scale(${studioState.zoom})`;
+    if (DOM.svgStage) {
+        DOM.svgStage.style.transform = `translate(${studioState.panX}px, ${studioState.panY}px) scale(${studioState.zoom})`;
+    }
 }
 
-DOM.btnZoomIn.addEventListener('click', () => {
+DOM.btnZoomIn?.addEventListener('click', () => {
     studioState.zoom = Math.min(5.0, studioState.zoom * 1.25);
     updateSvgTransform();
 });
 
-DOM.btnZoomOut.addEventListener('click', () => {
+DOM.btnZoomOut?.addEventListener('click', () => {
     studioState.zoom = Math.max(0.2, studioState.zoom / 1.25);
     updateSvgTransform();
 });
 
-DOM.btnResetView.addEventListener('click', () => {
+DOM.btnResetView?.addEventListener('click', () => {
     studioState.zoom = 1.0;
     studioState.panX = 0;
     studioState.panY = 0;
     updateSvgTransform();
 });
 
-DOM.svgStageWrapper.addEventListener('wheel', (e) => {
+DOM.svgStageWrapper?.addEventListener('wheel', (e) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     studioState.zoom = Math.max(0.2, Math.min(5.0, studioState.zoom * delta));
     updateSvgTransform();
 }, { passive: false });
 
-DOM.svgStageWrapper.addEventListener('mousedown', (e) => {
+DOM.svgStageWrapper?.addEventListener('mousedown', (e) => {
     studioState.isPanning = true;
     studioState.panStartX = e.clientX - studioState.panX;
     studioState.panStartY = e.clientY - studioState.panY;
@@ -305,19 +349,22 @@ window.addEventListener('mouseup', () => {
 
 function displaySvg(svgString, title = 'Generated Visual Blueprint') {
     studioState.currentSvgString = svgString;
-    DOM.svgStage.innerHTML = svgString;
+    if (DOM.svgStage) {
+        DOM.svgStage.innerHTML = svgString;
+    }
     
-    // Reset transform
     studioState.zoom = 1.0;
     studioState.panX = 0;
     studioState.panY = 0;
     updateSvgTransform();
     
     log(`Rendered SVG: ${title}`, 'success');
+    showToast(`Rendered ${title}`, 'success');
 }
 
-// --- Annealing Telemetry Chart ---
+// --- Telemetry Chart Engine ---
 function renderTelemetryChart(lossCurve = null) {
+    if (!DOM.telemetryCanvas) return;
     const canvas = DOM.telemetryCanvas;
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
@@ -364,58 +411,29 @@ function generateMockAnnealingCurve() {
 
 renderTelemetryChart();
 
-// --- Tab Switching Logic ---
-DOM.tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-        const domain = tab.dataset.domain;
-        switchTab(domain);
-    });
-});
-
-function switchTab(domain) {
-    studioState.activeDomain = domain;
-    
-    // Update tab styles
-    DOM.tabs.forEach(t => t.classList.toggle('active', t.dataset.domain === domain));
-    
-    // Update forms
-    DOM.forms.forEach(f => f.classList.toggle('active', f.id === `form-${domain}`));
-    
-    // Update Titles
-    const domainNames = {
-        music: { title: 'MUSIC PARAMETERS', badge: 'AUDIO DSP', mode: 'audio', tag: 'BACH HARMONICS' },
-        architecture: { title: 'ARCHITECTURE PARAMETERS', badge: 'FLOORPLAN', mode: 'svg', tag: 'AABB CONSTRAINTS' },
-        mechanics: { title: 'MECHANICS PARAMETERS', badge: 'STATICS', mode: 'svg', tag: '2D TRUSS FEA' },
-        pcb: { title: 'PCB ROUTING PARAMETERS', badge: 'CIRCUITS', mode: 'svg', tag: 'MANHATTAN PATHS' },
-        visual: { title: 'VISUAL & TYPE PARAMETERS', badge: 'GEOMETRY', mode: 'svg', tag: 'HSL ART' },
-        megacity: { title: 'MEGACITY CO-EVOLUTION', badge: 'PIPELINE', mode: 'svg', tag: 'FULL BLUEPRINT' },
-        fractal: { title: 'FRACTAL UNIVERSE', badge: 'RECURSIVE', mode: 'svg', tag: 'ISOMORPHIC SVG' },
-        album: { title: 'ALBUM BATCH RELEASE', badge: 'RAYON MT', mode: 'audio', tag: '10-TRACK CATALOG' }
-    };
-    
-    const info = domainNames[domain] || domainNames.music;
-    DOM.inspectorTitle.innerText = info.title;
-    DOM.inspectorBadge.innerText = info.badge;
-    DOM.viewportTag.innerText = info.tag;
-    
-    if (info.mode === 'audio') {
-        DOM.svgStageWrapper.style.display = 'none';
-        DOM.audioStageWrapper.style.display = 'flex';
-        DOM.canvasControls.style.display = 'none';
-        if (domain === 'album') {
-            DOM.albumCard.style.display = 'flex';
-            fetchAlbumTracklist();
-        } else {
-            DOM.albumCard.style.display = 'none';
-        }
-    } else {
-        DOM.svgStageWrapper.style.display = 'flex';
-        DOM.audioStageWrapper.style.display = 'none';
-        DOM.canvasControls.style.display = 'flex';
+// --- Real-time SSE Telemetry Receiver ---
+function initSseTelemetry() {
+    try {
+        const evtSource = new EventSource('/api/telemetry');
+        evtSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.loss !== undefined && DOM.statLoss) {
+                    DOM.statLoss.innerText = data.loss.toFixed(4);
+                }
+                if (data.temperature !== undefined && DOM.statTemp) {
+                    DOM.statTemp.innerText = `${data.temperature.toFixed(4)}°`;
+                }
+                if (data.iterations !== undefined && DOM.statIters) {
+                    DOM.statIters.innerText = data.iterations.toLocaleString();
+                }
+            } catch (err) {}
+        };
+    } catch (e) {
+        console.warn('SSE Telemetry:', e);
     }
-    
-    log(`Switched to workspace: ${domain.toUpperCase()}`, 'sys');
 }
+initSseTelemetry();
 
 // --- Value Slider Badges Sync ---
 function bindSlider(sliderId, badgeId, formatter) {
@@ -427,93 +445,214 @@ function bindSlider(sliderId, badgeId, formatter) {
     });
 }
 
-if (DOM.musicDissonanceSlider) {
-    DOM.musicDissonanceSlider.addEventListener('input', (e) => {
-        DOM.musicDissonanceVal.innerText = parseFloat(e.target.value).toFixed(1);
-    });
-}
-
-if (DOM.fmDissonanceSlider) {
-    DOM.fmDissonanceSlider.addEventListener('input', (e) => {
-        DOM.fmDissonanceVal.innerText = parseFloat(e.target.value).toFixed(2);
-    });
-}
+bindSlider('synAggressionSlider', 'synAggressionVal', v => parseFloat(v).toFixed(2));
+bindSlider('synEleganceSlider', 'synEleganceVal', v => parseFloat(v).toFixed(2));
+bindSlider('synDensitySlider', 'synDensityVal', v => parseFloat(v).toFixed(2));
+bindSlider('synIndustrialismSlider', 'synIndustrialismVal', v => parseFloat(v).toFixed(2));
 
 bindSlider('musicChordsSlider', 'musicChordsVal', v => `${v} Chords`);
-bindSlider('musicSecSlider', 'musicSecVal', v => `${parseFloat(v).toFixed(1)}s`);
 bindSlider('musicDissonanceSlider', 'musicDissonanceVal', v => parseFloat(v).toFixed(1));
+bindSlider('fmDissonanceSlider', 'fmDissonanceVal', v => parseFloat(v).toFixed(2));
+
 bindSlider('archDensitySlider', 'archDensityVal', v => `${v} Rooms`);
 bindSlider('archZoningSlider', 'archZoningVal', v => `${Math.round(v * 100)}% Commercial`);
 bindSlider('archWindSlider', 'archWindVal', v => `${parseFloat(v).toFixed(1)} F`);
+
 bindSlider('trussForceSlider', 'trussForceVal', v => `${v} N`);
-bindSlider('visHueSlider', 'visHueVal', v => `${v}° Hue`);
-bindSlider('visShapesSlider', 'visShapesVal', v => `${v} Shapes`);
 bindSlider('megaDensitySlider', 'megaDensityVal', v => `${v} Rooms`);
 
 // Tuning Toggle
 const btnTuning12 = document.getElementById('tuning12Tet');
 const btnTuningJust = document.getElementById('tuningJust');
-btnTuning12.addEventListener('click', () => {
-    btnTuning12.classList.add('active');
-    btnTuningJust.classList.remove('active');
-    studioState.currentProfile.culture.tuning = "12-TET";
-});
-btnTuningJust.addEventListener('click', () => {
-    btnTuningJust.classList.add('active');
-    btnTuning12.classList.remove('active');
-    studioState.currentProfile.culture.tuning = "Just Intonation";
-});
+if (btnTuning12 && btnTuningJust) {
+    btnTuning12.addEventListener('click', () => {
+        btnTuning12.classList.add('active');
+        btnTuningJust.classList.remove('active');
+        studioState.currentProfile.culture.tuning = "12-TET";
+    });
+    btnTuningJust.addEventListener('click', () => {
+        btnTuningJust.classList.add('active');
+        btnTuning12.classList.remove('active');
+        studioState.currentProfile.culture.tuning = "Just Intonation";
+    });
+}
 
 // MegaColor Picker
 const colorPicker = document.getElementById('megaColorPicker');
 const colorVal = document.getElementById('megaColorVal');
-colorPicker.addEventListener('input', (e) => {
-    colorVal.innerText = e.target.value;
+if (colorPicker && colorVal) {
+    colorPicker.addEventListener('input', (e) => {
+        colorVal.innerText = e.target.value;
+    });
+}
+
+// 3D Auto Rotate Toggle
+DOM.btnAutoRotate?.addEventListener('click', () => {
+    const viewer = DOM.synModelViewer;
+    if (!viewer) return;
+    if (viewer.hasAttribute('auto-rotate')) {
+        viewer.removeAttribute('auto-rotate');
+        DOM.btnAutoRotate.classList.remove('active');
+    } else {
+        viewer.setAttribute('auto-rotate', '');
+        DOM.btnAutoRotate.classList.add('active');
+    }
+});
+
+// --- Synesthesia Intent Presets ---
+const presets = {
+    cyber: { aggression: 0.85, elegance: 0.20, density: 0.70, industrialism: 0.90 },
+    organic: { aggression: 0.10, elegance: 0.90, density: 0.40, industrialism: 0.10 },
+    scifi: { aggression: 0.50, elegance: 0.70, density: 0.80, industrialism: 0.85 },
+    minimal: { aggression: 0.20, elegance: 0.80, density: 0.30, industrialism: 0.40 }
+};
+
+function applyIntentPreset(p) {
+    if (DOM.synAggressionSlider) DOM.synAggressionSlider.value = p.aggression;
+    if (DOM.synAggressionVal) DOM.synAggressionVal.innerText = p.aggression.toFixed(2);
+    if (DOM.synEleganceSlider) DOM.synEleganceSlider.value = p.elegance;
+    if (DOM.synEleganceVal) DOM.synEleganceVal.innerText = p.elegance.toFixed(2);
+    if (DOM.synDensitySlider) DOM.synDensitySlider.value = p.density;
+    if (DOM.synDensityVal) DOM.synDensityVal.innerText = p.density.toFixed(2);
+    if (DOM.synIndustrialismSlider) DOM.synIndustrialismSlider.value = p.industrialism;
+    if (DOM.synIndustrialismVal) DOM.synIndustrialismVal.innerText = p.industrialism.toFixed(2);
+}
+
+document.getElementById('presetCyber')?.addEventListener('click', (e) => {
+    document.querySelectorAll('.preset-pills .pill-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    applyIntentPreset(presets.cyber);
+});
+document.getElementById('presetOrganic')?.addEventListener('click', (e) => {
+    document.querySelectorAll('.preset-pills .pill-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    applyIntentPreset(presets.organic);
+});
+document.getElementById('presetSciFi')?.addEventListener('click', (e) => {
+    document.querySelectorAll('.preset-pills .pill-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    applyIntentPreset(presets.scifi);
+});
+document.getElementById('presetMinimal')?.addEventListener('click', (e) => {
+    document.querySelectorAll('.preset-pills .pill-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    applyIntentPreset(presets.minimal);
 });
 
 // --- API Execution Handlers ---
 
-// 1. Music (Bach Progression)
-async function generateBachAudio() {
-    DOM.btnGenMusic.disabled = true;
-    DOM.btnGenMusic.innerText = 'ANNEALING VOICES...';
-    log('Igniting The Crucible: Annealing 4-voice SATB counterpoint...', 'info');
-    
-    const root = parseFloat(document.getElementById('musicRootSelect').value);
-    const num_chords = parseInt(document.getElementById('musicChordsSlider').value);
-    const seconds_per_chord = parseFloat(document.getElementById('musicSecSlider').value);
+// 0. Synesthesia Generator
+DOM.btnGenSyn?.addEventListener('click', async () => {
+    log('Initiating Synesthesia 5-Sense Co-Evolution...', 'info');
+    DOM.btnGenSyn.disabled = true;
+    if (DOM.synSpinner) DOM.synSpinner.style.display = 'inline-block';
+    DOM.btnGenSyn.querySelector('.btn-text').innerText = 'OPTIMIZING 3D & AUDIO...';
     
     try {
-        const res = await fetch('/api/music/bach', {
+        const payload = {
+            aggression: parseFloat(DOM.synAggressionSlider.value),
+            elegance: parseFloat(DOM.synEleganceSlider.value),
+            density: parseFloat(DOM.synDensitySlider.value),
+            industrialism: parseFloat(DOM.synIndustrialismSlider.value)
+        };
+        
+        const res = await fetch('/api/synesthesia', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ root_note: root, num_chords, seconds_per_chord })
+            body: JSON.stringify(payload)
+        });
+        
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({ message: 'Server error' }));
+            throw new Error(errData.message || 'Synesthesia generation failed');
+        }
+        
+        const data = await res.json();
+        const timestamp = Date.now();
+        
+        // 3D Model Refresh
+        if (DOM.synModelViewer) {
+            DOM.synModelViewer.src = `/release/synesthesia.obj?t=${timestamp}`;
+        }
+        
+        // Audio Refresh
+        if (DOM.synAudioPlayer) {
+            DOM.synAudioPlayer.src = `/release/synesthesia.wav?t=${timestamp}`;
+            DOM.synAudioPlayer.play().catch(e => console.warn('Autoplay prevented:', e));
+        }
+        
+        if (DOM.btnDownloadObj) DOM.btnDownloadObj.href = `/release/synesthesia.obj?t=${timestamp}`;
+        if (DOM.btnDownloadWav) DOM.btnDownloadWav.href = `/release/synesthesia.wav?t=${timestamp}`;
+        
+        if (DOM.synDockTitle) DOM.synDockTitle.innerText = `Synesthesia Experience (Agg: ${payload.aggression} • Eleg: ${payload.elegance})`;
+        if (DOM.synDockMeta) DOM.synDockMeta.innerText = `Density: ${payload.density} • Ind: ${payload.industrialism} • Bohlen-Pierce / 12-TET`;
+        
+        renderTelemetryChart();
+        log('Synesthesia Experience generated and synchronized successfully!', 'success');
+        showToast('Synesthesia 3D + Audio generated!', 'success');
+        
+    } catch (e) {
+        log(`Generation Error: ${e.message}`, 'err');
+        showToast(`Error: ${e.message}`, 'error');
+    } finally {
+        DOM.btnGenSyn.disabled = false;
+        if (DOM.synSpinner) DOM.synSpinner.style.display = 'none';
+        DOM.btnGenSyn.querySelector('.btn-text').innerText = 'GENERATE SYNESTHESIA ✨';
+    }
+});
+
+// 1. Music (Full Composition & FM)
+async function generateFullMusic() {
+    if (!DOM.btnGenMusic) return;
+    DOM.btnGenMusic.disabled = true;
+    DOM.btnGenMusic.innerText = 'ANNEALING VOICES...';
+    log('Igniting The Crucible: Annealing musical score with Plomp-Levelt acoustics...', 'info');
+    
+    const profile = {
+        culture: {
+            tuning: studioState.currentProfile.culture.tuning,
+            phrase_length_bars: parseInt(DOM.musicChordsSlider?.value || '4'),
+            rhythmic_grid: "4/4"
+        },
+        physics: {
+            dissonance_tolerance: parseFloat(DOM.musicDissonanceSlider?.value || '2.0'),
+            fractal_chaos: 5.0
+        }
+    };
+    
+    try {
+        const res = await fetch('/api/music/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(profile)
         });
         
         if (res.ok) {
             const blob = await res.blob();
-            loadAndPlayAudioBlob(blob, `Bach Progression (${num_chords} Chords)`, `Root MIDI: ${root} • SATB Polyphony`);
+            loadAndPlayAudioBlob(blob, `Generative Composition (${profile.culture.phrase_length_bars} Bars)`, `Tuning: ${profile.culture.tuning} • Diss: ${profile.physics.dissonance_tolerance}`);
             renderTelemetryChart();
-            DOM.statLoss.innerText = '0.042';
-            DOM.statTemp.innerText = '0.001°';
         } else {
-            log('Error generating Bach audio.', 'err');
+            const err = await res.json().catch(() => ({ message: 'Error generating audio' }));
+            log(`Error: ${err.message}`, 'err');
+            showToast(err.message, 'error');
         }
     } catch (e) {
         log(`Network error: ${e.message}`, 'err');
+        showToast(e.message, 'error');
     } finally {
         DOM.btnGenMusic.disabled = false;
-        DOM.btnGenMusic.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> ANNEAL & SYNTHESIZE BACH`;
+        DOM.btnGenMusic.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> GENERATE FULL COMPOSITION`;
     }
 }
-DOM.btnGenMusic.addEventListener('click', generateBachAudio);
+DOM.btnGenMusic?.addEventListener('click', generateFullMusic);
 
 async function generateFmAudio() {
+    if (!DOM.btnGenFm) return;
     DOM.btnGenFm.disabled = true;
     DOM.btnGenFm.innerText = 'SYNTHESIZING...';
     log('Igniting The Crucible: Annealing FM parameters to target dissonance...', 'info');
     
-    const diss = parseFloat(DOM.fmDissonanceSlider.value);
+    const diss = parseFloat(DOM.fmDissonanceSlider?.value || '0.5');
     
     try {
         const res = await fetch(`/api/music/fm?dissonance=${diss}`, { method: 'GET' });
@@ -523,6 +662,7 @@ async function generateFmAudio() {
             renderTelemetryChart();
         } else {
             log('Error generating FM audio.', 'err');
+            showToast('Error generating FM audio', 'error');
         }
     } catch (e) {
         log(`Network error: ${e.message}`, 'err');
@@ -531,20 +671,20 @@ async function generateFmAudio() {
         DOM.btnGenFm.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg> SYNTHESIZE FM TIMBRE`;
     }
 }
-DOM.btnGenFm.addEventListener('click', generateFmAudio);
+DOM.btnGenFm?.addEventListener('click', generateFmAudio);
 
 // 2. Architecture (Floorplan)
-DOM.btnGenArch.addEventListener('click', async () => {
+DOM.btnGenArch?.addEventListener('click', async () => {
     DOM.btnGenArch.disabled = true;
     DOM.btnGenArch.innerText = 'EVOLVING SPATIAL BLUEPRINT...';
     log('Running Dual-Chaos Min-Max Room Evolution against Wind Force...', 'info');
     
-    const density = parseInt(document.getElementById('archDensitySlider').value);
-    const zoning_ratio = parseFloat(document.getElementById('archZoningSlider').value);
-    const max_wind_force = parseFloat(document.getElementById('archWindSlider').value);
+    const density = parseInt(document.getElementById('archDensitySlider')?.value || '20');
+    const zoning_ratio = parseFloat(document.getElementById('archZoningSlider')?.value || '0.5');
+    const max_wind_force = parseFloat(document.getElementById('archWindSlider')?.value || '50');
     
     try {
-        const res = await fetch('/api/architecture/floorplan', {
+        const res = await fetch('/api/arch/floorplan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ density, zoning_ratio, max_wind_force })
@@ -553,23 +693,26 @@ DOM.btnGenArch.addEventListener('click', async () => {
             const svg = await res.text();
             displaySvg(svg, `Architecture Layout (${density} Rooms)`);
             renderTelemetryChart();
+        } else {
+            const err = await res.json().catch(() => ({ message: 'Error generating floorplan' }));
+            showToast(err.message, 'error');
         }
     } catch (e) {
         log(`Error: ${e.message}`, 'err');
     } finally {
         DOM.btnGenArch.disabled = false;
-        DOM.btnGenArch.innerText = 'EVOLVE FLOORPLAN';
+        DOM.btnGenArch.innerText = 'EVOLVE 2D FLOORPLAN (SVG)';
     }
 });
 
 // 3. Mechanics (Truss)
-DOM.btnGenTruss.addEventListener('click', async () => {
+DOM.btnGenTruss?.addEventListener('click', async () => {
     DOM.btnGenTruss.disabled = true;
     DOM.btnGenTruss.innerText = 'SOLVING TOPOLOGY...';
     log('Optimizing 2D Truss load paths and minimizing mass...', 'info');
     
     try {
-        const res = await fetch('/api/mechanics/truss', { method: 'POST' });
+        const res = await fetch('/api/mechanics/truss', { method: 'GET' });
         if (res.ok) {
             const svg = await res.text();
             displaySvg(svg, '2D Truss Topology Statics');
@@ -579,98 +722,24 @@ DOM.btnGenTruss.addEventListener('click', async () => {
         log(`Error: ${e.message}`, 'err');
     } finally {
         DOM.btnGenTruss.disabled = false;
-        DOM.btnGenTruss.innerText = 'OPTIMIZE TRUSS TOPOLOGY';
+        DOM.btnGenTruss.innerText = 'OPTIMIZE 2D TRUSS MECHANICS';
     }
 });
 
-// 4. PCB Routing
-DOM.btnGenPcb.addEventListener('click', async () => {
-    DOM.btnGenPcb.disabled = true;
-    DOM.btnGenPcb.innerText = 'ROUTING NETS...';
-    log('Annealing Manhattan waypoints for 0-collision crossing nets...', 'info');
-    
-    try {
-        const res = await fetch('/api/pcb_routing/route', { method: 'POST' });
-        if (res.ok) {
-            const svg = await res.text();
-            displaySvg(svg, 'PCB 2-Net Routing');
-            renderTelemetryChart();
-        }
-    } catch (e) {
-        log(`Error: ${e.message}`, 'err');
-    } finally {
-        DOM.btnGenPcb.disabled = false;
-        DOM.btnGenPcb.innerText = 'SOLVE PCB ROUTING';
-    }
-});
-
-// 5. Visual Art & Typography
-const visModeArt = document.getElementById('visModeArt');
-const visModeType = document.getElementById('visModeType');
-const visArtControls = document.getElementById('visArtControls');
-
-visModeArt.addEventListener('click', () => {
-    visModeArt.classList.add('active');
-    visModeType.classList.remove('active');
-    visArtControls.style.display = 'block';
-});
-visModeType.addEventListener('click', () => {
-    visModeType.classList.add('active');
-    visModeArt.classList.remove('active');
-    visArtControls.style.display = 'none';
-});
-
-DOM.btnGenVisual.addEventListener('click', async () => {
-    DOM.btnGenVisual.disabled = true;
-    DOM.btnGenVisual.innerText = 'COMPOSING...';
-    
-    if (visModeArt.classList.contains('active')) {
-        log('Generating HSL Golden Ratio geometric artwork...', 'info');
-        const num_shapes = parseInt(document.getElementById('visShapesSlider').value);
-        const base_hue = parseFloat(document.getElementById('visHueSlider').value);
-        try {
-            const res = await fetch('/api/visual/art', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ num_shapes, base_hue, fractal_depth: 8 })
-            });
-            if (res.ok) {
-                const svg = await res.text();
-                displaySvg(svg, `Visual Geometric Art (${num_shapes} Shapes)`);
-            }
-        } catch (e) {
-            log(`Error: ${e.message}`, 'err');
-        }
-    } else {
-        log('Annealing Bezier curvature for typography glyph...', 'info');
-        try {
-            const res = await fetch('/api/typography/glyph', { method: 'POST' });
-            if (res.ok) {
-                const svg = await res.text();
-                displaySvg(svg, 'Bezier Typography Glyph');
-            }
-        } catch (e) {
-            log(`Error: ${e.message}`, 'err');
-        }
-    }
-    DOM.btnGenVisual.disabled = false;
-    DOM.btnGenVisual.innerText = 'RENDER ARTWORK';
-});
-
-// 6. MegaCity Pipeline
-DOM.btnGenMegaCity.addEventListener('click', async () => {
+// 4. MegaCity Co-Evolution
+DOM.btnGenMegaCity?.addEventListener('click', async () => {
     DOM.btnGenMegaCity.disabled = true;
-    DOM.btnGenMegaCity.innerText = 'CO-EVOLVING MEGACITY...';
-    log('Co-evolving Architecture + Truss + Inverse PBR Materials...', 'info');
+    DOM.btnGenMegaCity.innerText = 'RUNNING 10-STAGE PIPELINE...';
+    log('Executing MegaCity Pipeline: Arch -> Truss -> Material -> Stress -> CAD...', 'info');
     
-    const hex = colorPicker.value;
+    const density = parseInt(DOM.megaDensitySlider?.value || '25');
+    const hex = colorPicker ? colorPicker.value : '#38bdf8';
     const r = parseInt(hex.slice(1, 3), 16) / 255;
     const g = parseInt(hex.slice(3, 5), 16) / 255;
     const b = parseInt(hex.slice(5, 7), 16) / 255;
-    const density = parseInt(document.getElementById('megaDensitySlider').value);
     
-    const profile = {
-        arch: { density, zoning_ratio: 0.5, max_wind_force: 50.0 },
+    const payload = {
+        arch: { density, zoning_ratio: 0.6, max_wind_force: 60.0 },
         visual: { fractal_depth: 12, base_hue: 200.0 },
         mechanics: { target_r: r, target_g: g, target_b: b }
     };
@@ -679,76 +748,24 @@ DOM.btnGenMegaCity.addEventListener('click', async () => {
         const res = await fetch('/api/megacity/pipeline', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(profile)
+            body: JSON.stringify(payload)
         });
         if (res.ok) {
-            const svg = await res.text();
-            displaySvg(svg, 'MegaCity Co-Evolution Blueprint');
+            const result = await res.json();
+            log(`MegaCity Pipeline Completed: ${result.message}`, 'success');
+            showToast('MegaCity 3D CAD & G-Code Exported!', 'success');
             renderTelemetryChart();
         }
     } catch (e) {
         log(`Error: ${e.message}`, 'err');
     } finally {
         DOM.btnGenMegaCity.disabled = false;
-        DOM.btnGenMegaCity.innerText = 'GENERATE MEGACITY PIPELINE';
+        DOM.btnGenMegaCity.innerText = 'RUN 10-STAGE MEGACITY CAD PIPELINE';
     }
 });
 
-// 7. Fractal Universe
-DOM.btnGenFractal.addEventListener('click', async () => {
-    DOM.btnGenFractal.disabled = true;
-    DOM.btnGenFractal.innerText = 'RECURSIVELY PROJECTING...';
-    log('Expanding Isomorphic Multi-Depth Fractal Universe (Depth 0 -> 3)...', 'info');
-    
-    try {
-        const res = await fetch('/api/fractal/universe', { method: 'POST' });
-        if (res.ok) {
-            const svg = await res.text();
-            displaySvg(svg, 'Fractal Universe Multiverse');
-        }
-    } catch (e) {
-        log(`Network error: ${e.message}`, 'err');
-    } finally {
-        DOM.btnGenFractal.disabled = false;
-        DOM.btnGenFractal.innerText = 'EXPAND FRACTAL UNIVERSE';
-    }
-});
-
-// 9. Multi-Domain Fuzzing
-if (DOM.btnGenFuzz) {
-    DOM.btnGenFuzz.addEventListener('click', async () => {
-        DOM.btnGenFuzz.disabled = true;
-        DOM.btnGenFuzz.innerText = 'IGNITING MULTI-DOMAIN FUZZING...';
-        log('Initializing Navier-Stokes Fluid + Kinematics + Silicon Photonics...', 'info');
-        log('Applying Heat vs Viscosity / Vibration vs Optical Radius cross-penalties.', 'sys');
-
-        try {
-            const res = await fetch('/api/science/multidomain_fuzz', {
-                method: 'POST',
-            });
-            if (res.ok) {
-                const data = await res.json();
-                log(`Fuzzing Optimization Complete. Best Score: ${data.final_score}`, 'success');
-                log(`Final Genes [9D]:`, 'info');
-                log(`  Fluid (Vorticity, Pressure, Viscosity, Strain): ${data.genes.slice(0,4).map(v => v.toFixed(3)).join(', ')}`, 'sys');
-                log(`  Kinematics (Stiffness, Damping, Freq): ${data.genes.slice(4,7).map(v => v.toFixed(3)).join(', ')}`, 'sys');
-                log(`  Photonics (Radius, Power): ${data.genes.slice(7,9).map(v => v.toFixed(3)).join(', ')}`, 'sys');
-                renderTelemetryChart();
-            } else {
-                log('Error optimizing multi-domain fuzzing.', 'err');
-            }
-        } catch (e) {
-            log(`Network error: ${e.message}`, 'err');
-        } finally {
-            DOM.btnGenFuzz.disabled = false;
-            DOM.btnGenFuzz.innerText = 'IGNITE MULTI-DOMAIN FUZZING';
-        }
-    });
-}
-
-
-// 8. Album Release & Catalog
-DOM.btnTriggerAlbum.addEventListener('click', async () => {
+// 5. Album Release & Catalog
+DOM.btnTriggerAlbum?.addEventListener('click', async () => {
     DOM.btnTriggerAlbum.disabled = true;
     DOM.btnTriggerAlbum.innerText = 'SPAWNING RAYON WORKERS...';
     log('Initiating Rayon Parallel Album Pipeline (10 tracks)...', 'info');
@@ -757,14 +774,18 @@ DOM.btnTriggerAlbum.addEventListener('click', async () => {
         const res = await fetch('/api/album/release', { method: 'POST' });
         if (res.ok) {
             const data = await res.json();
-            log(`Success: ${data.status}`, 'success');
-            // Poll for tracks every 3 seconds
+            log(`Success: ${data.message}`, 'success');
+            showToast('Album production started!', 'success');
             let polls = 0;
             const poller = setInterval(async () => {
                 polls++;
                 await fetchAlbumTracklist();
                 if (polls > 8) clearInterval(poller);
             }, 3000);
+        } else if (res.status === 409) {
+            const data = await res.json();
+            log(`Notice: ${data.message}`, 'warn');
+            showToast(data.message, 'error');
         }
     } catch (e) {
         log(`Error: ${e.message}`, 'err');
@@ -775,6 +796,7 @@ DOM.btnTriggerAlbum.addEventListener('click', async () => {
 });
 
 async function fetchAlbumTracklist() {
+    if (!DOM.albumTrackList) return;
     try {
         const res = await fetch('/api/album/tracks');
         if (res.ok) {
@@ -805,11 +827,14 @@ async function fetchAlbumTracklist() {
                     const name = e.target.dataset.name;
                     log(`Streaming album track: ${name}`, 'info');
                     initWebAudio();
-                    DOM.audio.src = url;
-                    DOM.audio.load();
-                    DOM.audio.play();
-                    DOM.trackTitle.innerText = name;
-                    DOM.trackDetails.innerText = 'Full-length Produced Track • 44.1kHz WAV';
+                    if (DOM.audio) {
+                        DOM.audio.src = url;
+                        DOM.audio.load();
+                        DOM.audio.play();
+                    }
+                    if (DOM.trackTitle) DOM.trackTitle.innerText = name;
+                    if (DOM.trackDetails) DOM.trackDetails.innerText = 'Full-length Produced Track • 44.1kHz WAV';
+                    showToast(`Playing ${name}`, 'info');
                 });
             });
         }
@@ -818,42 +843,42 @@ async function fetchAlbumTracklist() {
     }
 }
 
+if (studioState.activePage === 'album') {
+    fetchAlbumTracklist();
+}
+
 // --- Presets Manager ---
-DOM.presetSelect.addEventListener('change', (e) => {
+DOM.presetSelect?.addEventListener('change', (e) => {
     const val = e.target.value;
     log(`Applying preset: ${val}`, 'info');
     
-    if (val === 'baroque_bach') {
-        document.getElementById('musicRootSelect').value = '60'; // C4
-        document.getElementById('musicChordsSlider').value = '8';
-        document.getElementById('musicChordsVal').innerText = '8 Chords';
-        document.getElementById('musicDissonanceSlider').value = '1.2';
-        document.getElementById('musicDissonanceVal').innerText = '1.2';
-        switchTab('music');
-        generateBachAudio();
+    if (val === 'cyber_brutalist') {
+        if (studioState.activePage !== 'synesthesia') window.location.href = 'index.html';
+        else document.getElementById('presetCyber')?.click();
+    } else if (val === 'harmonic_organic') {
+        if (studioState.activePage !== 'synesthesia') window.location.href = 'index.html';
+        else document.getElementById('presetOrganic')?.click();
+    } else if (val === 'baroque_bach') {
+        if (studioState.activePage !== 'music') window.location.href = 'music.html';
+        else {
+            if (DOM.musicRootSelect) DOM.musicRootSelect.value = '60';
+            if (DOM.musicChordsSlider) DOM.musicChordsSlider.value = '8';
+            if (DOM.musicDissonanceSlider) DOM.musicDissonanceSlider.value = '1.2';
+            generateFullMusic();
+        }
     } else if (val === 'cyberpunk_city') {
-        document.getElementById('megaDensitySlider').value = '40';
-        document.getElementById('megaDensityVal').innerText = '40 Rooms';
-        colorPicker.value = '#f43f5e';
-        colorVal.innerText = '#f43f5e';
-        switchTab('megacity');
-    } else if (val === 'drone_truss') {
-        document.getElementById('trussForceSlider').value = '3500';
-        document.getElementById('trussForceVal').innerText = '3500 N';
-        switchTab('mechanics');
-    } else if (val === 'high_density_pcb') {
-        switchTab('pcb');
-    } else if (val === 'acoustic_just') {
-        btnTuningJust.click();
-        document.getElementById('musicRootSelect').value = '69'; // A4
-        switchTab('music');
+        if (studioState.activePage !== 'architecture') window.location.href = 'architecture.html';
+        else {
+            if (DOM.megaDensitySlider) DOM.megaDensitySlider.value = '40';
+        }
     }
 });
 
 // --- Exports Handlers ---
-DOM.exportWavBtn.addEventListener('click', () => {
+DOM.exportWavBtn?.addEventListener('click', () => {
     if (!studioState.currentAudioBlob) {
-        log('No active audio to export. Generate a track first.', 'warn');
+        log('Downloading current synesthesia audio...', 'info');
+        window.open('/release/synesthesia.wav', '_blank');
         return;
     }
     const a = document.createElement('a');
@@ -863,22 +888,24 @@ DOM.exportWavBtn.addEventListener('click', () => {
     log('Exported searu_synthesis.wav', 'success');
 });
 
-DOM.exportSvgBtn.addEventListener('click', () => {
+DOM.exportSvgBtn?.addEventListener('click', () => {
     if (!studioState.currentSvgString) {
-        log('No active SVG to export. Generate a visual first.', 'warn');
+        log('No active SVG in viewport. Generate a floorplan or truss first.', 'warn');
+        showToast('No active SVG to export', 'error');
         return;
     }
     const blob = new Blob([studioState.currentSvgString], { type: 'image/svg+xml' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `searu_${studioState.activeDomain}.svg`;
+    a.download = `searu_blueprint.svg`;
     a.click();
-    log(`Exported searu_${studioState.activeDomain}.svg`, 'success');
+    log(`Exported searu_blueprint.svg`, 'success');
+    showToast('Exported SVG successfully', 'success');
 });
 
-DOM.exportMidiBtn.addEventListener('click', () => {
-    log('To download MIDI, release an album track or click MID in Album catalog.', 'info');
-    switchTab('album');
+DOM.exportMidiBtn?.addEventListener('click', () => {
+    log('MIDI tracks can be downloaded directly from the Album catalog.', 'info');
+    window.location.href = 'album.html';
 });
 
 function exportProfileJson() {
@@ -889,10 +916,27 @@ function exportProfileJson() {
     a.download = 'searu_profile.json';
     a.click();
     log('Exported searu_profile.json', 'success');
+    showToast('Exported searu_profile.json', 'success');
 }
 
-DOM.exportJsonBtn.addEventListener('click', exportProfileJson);
-DOM.topExportProfileBtn.addEventListener('click', exportProfileJson);
+DOM.exportJsonBtn?.addEventListener('click', exportProfileJson);
+DOM.topExportProfileBtn?.addEventListener('click', exportProfileJson);
 
-// --- Initialization ---
-log('SEARU Studio Ready. Initializing with default Music domain.', 'sys');
+// --- Global Keyboard Shortcuts ---
+window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+    if (e.code === 'Space') {
+        e.preventDefault();
+        DOM.playBtn?.click();
+    } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (studioState.activePage === 'synesthesia') DOM.btnGenSyn?.click();
+        else if (studioState.activePage === 'music') DOM.btnGenMusic?.click();
+        else if (studioState.activePage === 'architecture') DOM.btnGenArch?.click();
+        else if (studioState.activePage === 'album') DOM.btnTriggerAlbum?.click();
+    }
+});
+
+// --- Page Ready Log ---
+log(`SEARU Studio Ready. Active Workspace: ${studioState.activePage.toUpperCase()}`, 'sys');

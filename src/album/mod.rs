@@ -1,8 +1,6 @@
 use crate::music::arranger::Arranger;
 use crate::music::dsp::exporter::AudioExporter;
 use crate::music::macro_arranger::MacroArranger;
-use crate::visual::composer::VisualComposer;
-use crate::visual::exporter::SvgExporter;
 use rayon::prelude::*;
 use std::fs;
 
@@ -34,7 +32,7 @@ impl AlbumProducer {
             let profile =
                 crate::profile::ArtistProfile::load_or_default("public/searu_profile.json");
             let energy_curve = MacroArranger::evolve_energy_curve(total_bars);
-            let (audio_data, cost_scores, track_score) = Arranger::compose_track(
+            let (audio_data, _cost_scores, track_score) = Arranger::compose_track(
                 &seed_chord,
                 total_bars,
                 bpm,
@@ -45,22 +43,18 @@ impl AlbumProducer {
 
             // Save WAV
             let wav_path = format!("{}/{}.wav", release_dir, track_name);
-            AudioExporter::save_to_wav_file(&wav_path, &audio_data, sample_rate).unwrap();
+            if let Err(e) = AudioExporter::save_to_wav_file(&wav_path, &audio_data, sample_rate) {
+                eprintln!("❌ Failed to save WAV {}: {:?}", track_name, e);
+                return;
+            }
 
             // Save MIDI
             let midi_path = format!("{}/{}.mid", release_dir, track_name);
             let midi_data = crate::music::midi::MidiExporter::export_to_midi(&track_score, bpm);
-            std::fs::write(&midi_path, midi_data).unwrap();
-
-            // Generate Album Art
-            let shapes = VisualComposer::generate_art(
-                i,
-                &track_name,
-                &cost_scores,
-                &crate::profile::VisualProfile::default(),
-            );
-            let svg_path = format!("{}/{}.svg", release_dir, track_name);
-            SvgExporter::save_to_svg(&svg_path, &shapes).unwrap();
+            if let Err(e) = std::fs::write(&midi_path, midi_data) {
+                eprintln!("❌ Failed to save MIDI {}: {:?}", track_name, e);
+                return;
+            }
 
             println!("✅ {} completed! Saved to {}/", track_name, release_dir);
         });
