@@ -64,7 +64,8 @@ async fn main() {
         .route("/api/arch/floorplan", get(api_arch_floorplan))
         .route("/api/arch/floorplan", post(api_arch_floorplan_post))
         .route("/api/megacity/pipeline", post(api_megacity_pipeline))
-        .route("/api/science/multidomain_fuzz", post(api_science_multidomain_fuzz))
+        .route("/api/science/multidomain_fuzz", get(api_science_multidomain_fuzz))
+        .route("/api/science/logic_proof", get(api_science_logic_proof))
         .route("/api/album/release", get(api_album_release).post(api_album_release))
         .route("/api/album/tracks", get(api_album_tracks))
         .route("/api/album/track/:filename", get(api_serve_album_track))
@@ -155,6 +156,30 @@ async fn api_science_multidomain_fuzz() -> impl IntoResponse {
     })
 }
 
+#[derive(Serialize)]
+pub struct LogicProofResponse {
+    pub sat_solved: bool,
+    pub sat_result: Vec<bool>,
+    pub syllogism_solved: bool,
+    pub syllogism_result: bool,
+    pub graph_color_solved: bool,
+    pub graph_color_result: Vec<u8>,
+}
+
+async fn api_science_logic_proof() -> impl IntoResponse {
+    let sat_out = crate::science::logic_sat::prove_sat();
+    let syllogism_out = crate::science::logic_syllogism::prove_syllogism();
+    let graph_out = crate::science::logic_graph_color::prove_graph_coloring();
+    
+    Json(LogicProofResponse {
+        sat_solved: sat_out.is_ok(),
+        sat_result: sat_out.unwrap_or_default(),
+        syllogism_solved: syllogism_out.is_ok(),
+        syllogism_result: syllogism_out.unwrap_or_default(),
+        graph_color_solved: graph_out.is_ok(),
+        graph_color_result: graph_out.unwrap_or_default(),
+    })
+}
 
 async fn api_music_fm(
     axum::extract::Query(query): axum::extract::Query<api::FmRequest>,

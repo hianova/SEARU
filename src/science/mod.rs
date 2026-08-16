@@ -10,4 +10,6 @@ pub mod resonance_objective;
 pub mod aerodynamic_objective;
 pub mod topology_isolation_objective;
 pub mod metamaterial_objective;
-
+pub mod logic_sat;
+pub mod logic_syllogism;
+pub mod logic_graph_color;
