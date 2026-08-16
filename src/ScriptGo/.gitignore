@@ -1,0 +1,10 @@
+/target
+.covopt/
+
+**/target/
+
+*.DS_Store
+.DS_Store
+**/.DS_Store
+data/
+data/*

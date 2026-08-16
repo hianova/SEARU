@@ -465,6 +465,28 @@ kbd {
     line-height: 1.4;
 }
 
+/* ScriptGo Editor */
+.sgo-editor {
+    width: 100%;
+    height: 240px;
+    background: #020617;
+    color: #34d399;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 12px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sgo-editor:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 2px var(--cyan-glow);
+}
+
 /* Range Inputs */
 input[type="range"] {
     flex: 1;

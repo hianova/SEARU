@@ -84,7 +84,7 @@ const DOM = {
     exportWavBtn: document.getElementById('btnExportWav'),
     exportMidiBtn: document.getElementById('btnExportMidi'),
     exportSvgBtn: document.getElementById('btnExportSvg'),
-    exportJsonBtn: document.getElementById('btnExportJson'),
+    exportDnaBtn: document.getElementById('btnExportDna'),
     
     // Synesthesia Controls
     btnGenSyn: document.getElementById('btnGenerateSynesthesia'),
@@ -97,6 +97,18 @@ const DOM = {
     synEleganceVal: document.getElementById('synEleganceVal'),
     synDensityVal: document.getElementById('synDensityVal'),
     synIndustrialismVal: document.getElementById('synIndustrialismVal'),
+    
+    // ScriptGo Elements
+    tabUiControls: document.getElementById('tabUiControls'),
+    tabScriptGo: document.getElementById('tabScriptGo'),
+    uiControlsSection: document.getElementById('uiControlsSection'),
+    scriptGoSection: document.getElementById('scriptGoSection'),
+    sgoTemplateSelect: document.getElementById('sgoTemplateSelect'),
+    sgoEditor: document.getElementById('sgoEditor'),
+    chkHotLoad: document.getElementById('chkHotLoad'),
+    btnBakeScript: document.getElementById('btnBakeScript'),
+    btnRunScript: document.getElementById('btnRunScript'),
+    scriptSpinner: document.getElementById('scriptSpinner'),
     
     // Domain action buttons
     btnGenMusic: document.getElementById('btnGenerateMusic'),
@@ -596,9 +608,158 @@ DOM.btnGenSyn?.addEventListener('click', async () => {
         showToast(`Error: ${e.message}`, 'error');
     } finally {
         DOM.btnGenSyn.disabled = false;
-        if (DOM.synSpinner) DOM.synSpinner.style.display = 'none';
+        DOM.synSpinner.style.display = 'none';
         DOM.btnGenSyn.querySelector('.btn-text').innerText = 'GENERATE SYNESTHESIA ✨';
     }
+});
+
+// ScriptGo Tab Toggles
+DOM.tabUiControls?.addEventListener('click', () => {
+    DOM.tabUiControls.classList.add('active');
+    DOM.tabScriptGo.classList.remove('active');
+    if (DOM.uiControlsSection) DOM.uiControlsSection.style.display = 'flex';
+    if (DOM.scriptGoSection) DOM.scriptGoSection.style.display = 'none';
+});
+
+DOM.tabScriptGo?.addEventListener('click', () => {
+    DOM.tabScriptGo.classList.add('active');
+    DOM.tabUiControls.classList.remove('active');
+    if (DOM.scriptGoSection) DOM.scriptGoSection.style.display = 'flex';
+    if (DOM.uiControlsSection) DOM.uiControlsSection.style.display = 'none';
+});
+
+// ScriptGo execution
+DOM.btnRunScript?.addEventListener('click', async () => {
+    DOM.btnRunScript.disabled = true;
+    DOM.scriptSpinner.style.display = 'inline-block';
+    DOM.btnRunScript.querySelector('.btn-text').innerText = 'EXECUTING SCRIPT...';
+    
+    try {
+        const payload = { script: DOM.sgoEditor.value };
+        const response = await fetch('/api/script/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText);
+        }
+        
+        const data = await response.json();
+        
+        // Update DOM elements just like normal generation
+        const bust = `?v=${Date.now()}`;
+        DOM.synModelViewer.src = data.architecture_obj + bust;
+        DOM.synAudioPlayer.src = data.music_wav + bust;
+        DOM.btnDownloadObj.href = data.architecture_obj + bust;
+        DOM.btnDownloadWav.href = data.music_wav + bust;
+        
+        // Log register states to console
+        const {r1, r2, r3, r4} = data.registers;
+        log(`Script Output Registers: R1=${r1}(Agg), R2=${r2}(Ele), R3=${r3}(Den), R4=${r4}(Ind)`, 'sys');
+        
+        // Optionally update the sliders visually to match script intent
+        DOM.synAggressionSlider.value = r1 / 100.0;
+        DOM.synEleganceSlider.value = r2 / 100.0;
+        DOM.synDensitySlider.value = r3 / 100.0;
+        DOM.synIndustrialismSlider.value = r4 / 100.0;
+        DOM.synAggressionVal.innerText = (r1 / 100.0).toFixed(2);
+        DOM.synEleganceVal.innerText = (r2 / 100.0).toFixed(2);
+        DOM.synDensityVal.innerText = (r3 / 100.0).toFixed(2);
+        DOM.synIndustrialismVal.innerText = (r4 / 100.0).toFixed(2);
+        
+        showToast('ScriptGo Executed: Synesthesia Generated!');
+        DOM.synAudioPlayer.play().catch(e => console.log('Auto-play prevented', e));
+        
+    } catch (err) {
+        log(`Script Error: ${err.message}`, 'error');
+        showToast('Script Execution Failed', 'error');
+    } finally {
+        DOM.btnRunScript.disabled = false;
+        DOM.scriptSpinner.style.display = 'none';
+        DOM.btnRunScript.querySelector('.btn-text').innerText = 'EXECUTE SCRIPTGO ⚡';
+    }
+});
+
+// Template Selector
+const TEMPLATES = {
+    cyber: `// SearuScript: Cyber Brutalist
+let aggression: Float = 95.0;
+let elegance: Float = 5.0;
+let density: Float = 90.0;
+let industrialism: Float = 80.0;`,
+    organic: `// SearuScript: Harmonic Organic
+let aggression: Float = 10.0;
+let elegance: Float = 95.0;
+let density: Float = 30.0;
+let industrialism: Float = 10.0;`,
+    glitch: `// SearuScript: Maximum Entropy (Glitch)
+let aggression: Float = 100.0;
+let elegance: Float = 0.0;
+let density: Float = 100.0;
+let industrialism: Float = 100.0;`
+};
+DOM.sgoTemplateSelect?.addEventListener('change', (e) => {
+    if (TEMPLATES[e.target.value]) {
+        DOM.sgoEditor.value = TEMPLATES[e.target.value];
+        if (DOM.chkHotLoad && DOM.chkHotLoad.checked) {
+            DOM.btnRunScript.click();
+        }
+    }
+});
+
+// Auto Hot-Load (Debounced)
+let hotLoadTimer = null;
+DOM.sgoEditor?.addEventListener('input', () => {
+    if (DOM.chkHotLoad && DOM.chkHotLoad.checked) {
+        clearTimeout(hotLoadTimer);
+        hotLoadTimer = setTimeout(() => {
+            if (!DOM.btnRunScript.disabled) {
+                DOM.btnRunScript.click();
+            }
+        }, 300);
+    }
+});
+
+// Bake & Freeze
+let isBaked = false;
+DOM.btnBakeScript?.addEventListener('click', () => {
+    isBaked = !isBaked;
+    if (isBaked) {
+        DOM.sgoEditor.disabled = true;
+        DOM.sgoEditor.style.opacity = '0.5';
+        DOM.chkHotLoad.checked = false;
+        DOM.chkHotLoad.disabled = true;
+        DOM.btnBakeScript.innerText = '🔓 Unbake State';
+        DOM.btnBakeScript.style.background = '#2a9d8f';
+        DOM.sgoTemplateSelect.disabled = true;
+        showToast('Generative DNA Baked & Frozen!', 'success');
+        log('Generative state baked. Scripts locked.', 'sys');
+    } else {
+        DOM.sgoEditor.disabled = false;
+        DOM.sgoEditor.style.opacity = '1';
+        DOM.chkHotLoad.disabled = false;
+        DOM.btnBakeScript.innerText = '🔒 Bake & Freeze';
+        DOM.btnBakeScript.style.background = '#a83232';
+        DOM.sgoTemplateSelect.disabled = false;
+        showToast('Generative DNA Unlocked.');
+    }
+});
+
+// DNA Export
+DOM.exportDnaBtn?.addEventListener('click', () => {
+    const text = DOM.sgoEditor ? DOM.sgoEditor.value : '';
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'intent_dna.sgo';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('ScriptGo DNA Exported!');
+    log('Exported intent_dna.sgo to disk', 'sys');
 });
 
 // 1. Music (Full Composition & FM)

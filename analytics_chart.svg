@@ -1,0 +1,5 @@
+<svg width="1200" height="400" xmlns="http://www.w3.org/2000/svg" style="background-color:#111;">
+<path d="M 50.0 311.8 L 325.0 95.9 L 600.0 69.4 L 875.0 335.0 " stroke="#4A90E2" stroke-width="3" fill="none" />
+<path d="M 50.0 50.0 L 325.0 246.3 L 600.0 350.0 L 875.0 350.0 " stroke="#E24A4A" stroke-width="2" stroke-dasharray="5,5" fill="none" />
+<line x1="50" y1="50" x2="50" y2="350" stroke="#F5A623" stroke-width="4" />
+</svg>

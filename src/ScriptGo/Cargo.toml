@@ -1,0 +1,51 @@
+[package]
+name = "script_go"
+version = "2.0.0"
+edition = "2024"
+
+exclude = [".covopt/"]
+
+[[bin]]
+name = "sgo"
+path = "src/main.rs"
+
+
+[dependencies]
+covopt-macro = { workspace = true }
+no_std_tool = { workspace = true, features = ["numerics", "diagnostics"] }
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+serde_json = { workspace = true, optional = true, features = ["alloc"] }
+num_cpus = { workspace = true, optional = true }
+sgl_macros = { path = "sgl_macros" }
+
+[dev-dependencies]
+sgl-net = { path = "sgl_net" }
+sgl-io = { path = "sgl_io" }
+rkyv = { workspace = true }
+criterion = { workspace = true }
+arc-swap = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+mlua = { version = "0.9", features = ["lua54", "vendored"] }
+wasmi = "0.31"
+wat = "1.0"
+
+[[bench]]
+name = "vm_bench"
+harness = false
+
+[[bench]]
+name = "concurrency_bench"
+harness = false
+
+[[bench]]
+name = "ebpf_bench"
+harness = false
+
+[[bench]]
+name = "hft_bench"
+harness = false
+
+[features]
+default = ["std"]
+std = ["dep:num_cpus", "dep:serde_json"]
+

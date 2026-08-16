@@ -1,0 +1,13 @@
+agent_deterrence = true
+
+[[target]]
+test = "covopt_tests::covopt_benchmark_test"
+expected = "O(N)"
+n_values = "100,500,1000"
+require_cache_padding = true
+require_branch_hints = true
+require_aerospace_grade = false
+require_watchdog_timeout = true
+require_stress_test = false
+
+

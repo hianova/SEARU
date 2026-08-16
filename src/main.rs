@@ -51,6 +51,7 @@ async fn main() {
         .nest_service("/release", ServeDir::new("release"))
         .route("/api/music/generate", post(api_music_generate))
         .route("/api/synesthesia", post(api_synesthesia_generate))
+        .route("/api/script/run", post(api_script_run))
         .route("/api/music/fm", get(api_music_fm))
         .route("/api/mechanics/truss", get(api_mechanics_truss))
         .route("/api/materials/match", get(api_materials_match))
@@ -344,5 +345,74 @@ async fn api_synesthesia_generate(
         "status": "success",
         "architecture_obj": obj_path,
         "music_wav": wav_path
+    })))
+}
+
+#[derive(serde::Deserialize)]
+pub struct ScriptRequest {
+    pub script: String,
+}
+
+async fn api_script_run(
+    axum::Json(req): axum::Json<ScriptRequest>,
+) -> Result<impl axum::response::IntoResponse, AppError> {
+    let mut is_high_level = req.script.contains("let ") || req.script.contains("=");
+    let mut code = vec![];
+    let mut vars_map = std::collections::HashMap::new();
+
+    if is_high_level {
+        let (bytecode, vmap) = script_go::compiler::compile_high_level(&req.script)
+            .map_err(|e| AppError::Internal(format!("DSL Compile Error: {}", e)))?;
+        code = bytecode;
+        // Convert no_std_tool HashMap to std::collections::HashMap if needed, or just iterate
+        for (k, v) in vmap {
+            vars_map.insert(k.clone(), v);
+        }
+    } else {
+        code = script_go::assembler::parse_asm(&req.script)
+            .map_err(|e| AppError::Internal(format!("Script Compile Error: {:?}", e)))?;
+    }
+
+    let mut vm = script_go::vm::ScriptVm::new();
+    vm.run(&code).map_err(|e| AppError::Internal(format!("Script Runtime Error: {:?}", e)))?;
+    
+    // Extract variables. If high-level, use map. If assembly, use R1-R4
+    let mut r1 = vm.registers[1] as f64;
+    let mut r2 = vm.registers[2] as f64;
+    let mut r3 = vm.registers[3] as f64;
+    let mut r4 = vm.registers[4] as f64;
+
+    if is_high_level {
+        if let Some(&reg) = vars_map.get("aggression") { r1 = vm.registers[reg as usize] as f64; }
+        if let Some(&reg) = vars_map.get("elegance") { r2 = vm.registers[reg as usize] as f64; }
+        if let Some(&reg) = vars_map.get("density") { r3 = vm.registers[reg as usize] as f64; }
+        if let Some(&reg) = vars_map.get("industrialism") { r4 = vm.registers[reg as usize] as f64; }
+    }
+
+    let aggression = r1 / 100.0;
+    let elegance = r2 / 100.0;
+    let density = r3 / 100.0;
+    let industrialism = r4 / 100.0;
+
+    let intent = crate::intent::DesignIntent {
+        aggression: aggression.clamp(0.0, 1.0),
+        elegance: elegance.clamp(0.0, 1.0),
+        density: density.clamp(0.0, 1.0),
+        industrialism: industrialism.clamp(0.0, 1.0),
+    };
+
+    let (obj_path, wav_path) = crate::synesthesia::SynesthesiaEngine::generate_experience(intent)
+        .map_err(|e| AppError::Internal(e))?;
+
+    Ok(axum::Json(serde_json::json!({
+        "status": "success",
+        "architecture_obj": obj_path,
+        "music_wav": wav_path,
+        "registers": {
+            "r1": r1 as u64,
+            "r2": r2 as u64,
+            "r3": r3 as u64,
+            "r4": r4 as u64,
+        }
     })))
 }

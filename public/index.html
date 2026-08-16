@@ -61,10 +61,13 @@
             <aside class="panel panel-inspector">
                 <div class="panel-header">
                     <h2>4-D INTENT MATRIX</h2>
-                    <span class="sub-badge">5-SENSE SYNESTHESIA</span>
+                    <div class="segmented-control" style="width: 170px;">
+                        <button class="seg-btn active" id="tabUiControls">Sliders</button>
+                        <button class="seg-btn" id="tabScriptGo">ScriptGo ⚡</button>
+                    </div>
                 </div>
 
-                <div class="inspector-content">
+                <div class="inspector-content" id="uiControlsSection">
                     <div class="intent-presets">
                         <span class="preset-title">INTENT PRESETS:</span>
                         <div class="preset-pills">
@@ -122,6 +125,35 @@
                     <button id="btnGenerateSynesthesia" class="btn btn-primary btn-block btn-lg">
                         <span class="btn-spinner" id="synSpinner"></span>
                         <span class="btn-text">GENERATE SYNESTHESIA ✨</span>
+                    </button>
+                </div>
+
+                <div class="inspector-content" id="scriptGoSection" style="display: none; padding-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span class="preset-title">ECOSYSTEM TEMPLATES:</span>
+                        <select id="sgoTemplateSelect" class="studio-select">
+                            <option value="cyber">⚡ Cyber Brutalist</option>
+                            <option value="organic">🌿 Harmonic Organic</option>
+                            <option value="glitch">🪐 Industrial Glitch</option>
+                        </select>
+                    </div>
+                    <p class="description">Write SearuScript (High-Level DSL) to manipulate constraints. Compiles to ScriptGo VM native assembly. Standard vars: aggression, elegance, density, industrialism.</p>
+                    <textarea id="sgoEditor" class="sgo-editor" spellcheck="false">// SearuScript: Cyber Brutalist
+let aggression: Float = 95.0;
+let elegance: Float = 5.0;
+let density: Float = 90.0;
+let industrialism: Float = 80.0;</textarea>
+                    
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; margin-bottom: 10px;">
+                        <label style="color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--font-mono);">
+                            <input type="checkbox" id="chkHotLoad" style="cursor: pointer;"> ⚡ Auto Hot-Load
+                        </label>
+                        <button id="btnBakeScript" class="btn btn-sm btn-outline" style="border-color: rgba(244, 63, 94, 0.4); color: var(--rose);">🔒 Bake & Freeze</button>
+                    </div>
+
+                    <button id="btnRunScript" class="btn btn-primary btn-block btn-lg">
+                        <span class="btn-spinner" id="scriptSpinner"></span>
+                        <span class="btn-text">EXECUTE SCRIPTGO ⚡</span>
                     </button>
                 </div>
             </aside>
@@ -208,9 +240,9 @@
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
                                 Audio (.WAV)
                             </button>
-                            <button id="btnExportJson" class="btn btn-export">
+                            <button id="btnExportDna" class="btn btn-export">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                Profile (.JSON)
+                                DNA Script (.SGO)
                             </button>
                         </div>
                     </div>
