@@ -1,13 +1,7 @@
 use crate::architecture::FloorPlanner;
 use crate::materials::matcher::MaterialMatcher;
 use crate::mechanics::optimizer::MechanicsOptimizer;
-use crate::science::multidomain_fuzz::MultiDomainFuzzObjective;
-use crate::science::chaos_swarm::ChaosSwarm;
-use crate::science::assembly_funnel::FunnelConfig;
-use crate::science::resonance_objective::ResonanceObjective;
-use crate::science::aerodynamic_objective::AerodynamicObjective;
-use crate::science::topology_isolation_objective::TopologyIsolationObjective;
-use crate::science::metamaterial_objective::MetamaterialObjective;
+use crate::science::crucible::{TheCrucible, Gene};
 
 pub mod exporter;
 pub mod gcode_exporter;
@@ -21,10 +15,7 @@ impl MegaCityPipeline {
         let rooms = FloorPlanner::optimize_layout(profile.arch.clone());
 
         // Step 2: Mechanics Truss Generation
-        // We use the center of the architecture as the base for the mechanics.
         println!("[MegaPipeline] Phase 2: Generating Truss Mechanics...");
-        // Since MegaCityProfile doesn't have PhysicsProfile directly, we use default for physics
-        // or we could refactor MegaCityProfile. Let's use default.
         let physics_profile = crate::profile::PhysicsProfile::default();
         let truss = MechanicsOptimizer::optimize_truss(&profile.arch, &physics_profile);
 
@@ -49,62 +40,77 @@ impl MegaCityPipeline {
         let env_bars = truss.bars.len() as f64;
         let env_metallic = mat.metallic;
         
-        let objective = MultiDomainFuzzObjective::new(env_rooms, env_bars, env_metallic);
-        let config = FunnelConfig {
-            tier1_population: 500,
-            tier2_retention_ratio: 0.1,
-            tier3_dfs_depth: 1,
-            stagnation_patience: 10,
-            stagnation_delta: 0.5,
-            rng_seed: 42,
-            min_slope_window: 0,
-            min_slope_threshold: 0.0,
-            hard_limit_gen: 256,
-            hard_limit_score: 0,
-            use_diffusion: true,
-        };
-        let (_, best_candidate) = ChaosSwarm::launch_swarm_tunable(
-            objective, config.clone(), "MegaCity Stress Simulation", 
-            4, 64, 4
+        let fuzz_genes = vec![
+            Gene { name: "enstrophy".into(), bounds: (0.0, 10.0), current_value: 0.5 },
+            Gene { name: "pressure_gradient".into(), bounds: (0.0, 10.0), current_value: 0.5 },
+            Gene { name: "viscosity".into(), bounds: (0.1, 50.0), current_value: 1.0 },
+            Gene { name: "local_strain".into(), bounds: (0.0, 50.0), current_value: 0.5 },
+            Gene { name: "stiffness".into(), bounds: (10.0, 500.0), current_value: 100.0 },
+            Gene { name: "damping".into(), bounds: (1.0, 50.0), current_value: 10.0 },
+            Gene { name: "freq".into(), bounds: (0.1, 20.0), current_value: 1.0 },
+            Gene { name: "radius".into(), bounds: (1.0, 50.0), current_value: 5.0 },
+            Gene { name: "power".into(), bounds: (1.0, 100.0), current_value: 10.0 },
+        ];
+        
+        let (_, best_fuzz) = TheCrucible::anneal(
+            fuzz_genes,
+            |g| crate::science::multidomain_fuzz::evaluate_multidomain(g, env_rooms, env_bars, env_metallic),
+            256
         );
-        let fuzz_genes = best_candidate.unwrap_or([0.0; 9]);
 
-        let _enstrophy = fuzz_genes[0];
-        let _freq = fuzz_genes[2];
-        let _power = fuzz_genes[8];
+        let _enstrophy = best_fuzz[0].current_value;
+        let _freq = best_fuzz[6].current_value;
+        let _power = best_fuzz[8].current_value;
 
         // --- Phase 6: Vibration Damping Truss ---
         println!("[MegaPipeline] Phase 6: Optimizing vibration damping truss spacing...");
-        let resonance_objective = ResonanceObjective;
-        let resonance_swarm = ChaosSwarm::launch_swarm_tunable(
-            resonance_objective, config.clone(), "Truss Damping Spacing", 4, 64, 4
+        let mut res_genes = vec![];
+        for i in 0..10 {
+            res_genes.push(Gene { name: format!("spacing_{}", i), bounds: (0.0, 3.0), current_value: 1.0 });
+        }
+        let (_, best_res) = TheCrucible::anneal(
+            res_genes,
+            |g| crate::science::resonance_objective::evaluate_resonance(g),
+            256
         );
-        let mut best_spacings = resonance_swarm.1.unwrap_or([1.0; 10]);
+        let mut best_spacings: Vec<f64> = best_res.iter().map(|g| g.current_value).collect();
         best_spacings.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
         // --- Phase 7: Aerodynamic Boundary Deflectors ---
         println!("[MegaPipeline] Phase 7: Optimizing aerodynamic wind deflectors...");
-        let aero_objective = AerodynamicObjective;
-        let aero_swarm = ChaosSwarm::launch_swarm_tunable(
-            aero_objective, config.clone(), "Aerodynamic Profiles", 4, 64, 4
+        let mut aero_genes = vec![];
+        for i in 0..8 {
+            aero_genes.push(Gene { name: format!("angle_{}", i), bounds: (0.0, std::f64::consts::PI), current_value: 0.0 });
+        }
+        let (_, _best_aero) = TheCrucible::anneal(
+            aero_genes,
+            |g| crate::science::aerodynamic_objective::evaluate_aerodynamic(g),
+            256
         );
-        let _best_aero = aero_swarm.1.unwrap_or([0.0; 8]);
 
         // --- Phase 8: Joint Load Isolation ---
         println!("[MegaPipeline] Phase 8: Optimizing joint load isolation topology...");
-        let isolation_objective = TopologyIsolationObjective;
-        let isolation_swarm = ChaosSwarm::launch_swarm_tunable(
-            isolation_objective, config.clone(), "Joint Load Isolation", 4, 64, 4
+        let mut topo_genes = vec![];
+        for i in 0..15 {
+            topo_genes.push(Gene { name: format!("weight_{}", i), bounds: (0.0, 5.0), current_value: 1.0 });
+        }
+        let (_, _best_topo) = TheCrucible::anneal(
+            topo_genes,
+            |g| crate::science::topology_isolation_objective::evaluate_topology_isolation(g),
+            256
         );
-        let _best_topology = isolation_swarm.1.unwrap_or([0.0; 15]);
 
         // --- Phase 9: Acoustic Void Micro-Topology ---
         println!("[MegaPipeline] Phase 9: Optimizing internal acoustic/shock voids...");
-        let void_objective = MetamaterialObjective;
-        let void_swarm = ChaosSwarm::launch_swarm_tunable(
-            void_objective, config.clone(), "Acoustic Micro-Topology", 4, 128, 4
+        let mut void_genes = vec![];
+        for i in 0..32 {
+            void_genes.push(Gene { name: format!("void_{}", i), bounds: (-15.0, 15.0), current_value: 0.0 });
+        }
+        let (_, _best_voids) = TheCrucible::anneal(
+            void_genes,
+            |g| crate::science::metamaterial_objective::evaluate_metamaterial(g),
+            512
         );
-        let _best_voids = void_swarm.1.unwrap_or([0.0; 32]);
 
         // --- Phase 10: 3D Scene & Fabrication Export ---
         println!("[MegaPipeline] Phase 10: Exporting Blender 3D Model & CNC/3D Print G-Code...");

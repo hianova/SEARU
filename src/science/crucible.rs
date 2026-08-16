@@ -75,23 +75,27 @@ impl TheCrucible {
         for i in 0..iterations {
             let mut candidate_genes = genes.clone();
 
-            // Perturb genes using Cauchy Distribution (Lévy Flight / Fat-Tail)
+            // Perturb genes using Native Black Swan Engine (next_zipf from chaos_state)
             let mut is_black_swan = false;
+            let mut tweak = crate::science::chaos_state::MicroTweak { s_exponent: 1.5, max_elements: 1 };
+            let mut rng_state = crate::science::chaos_state::RngState::new(rand::random::<u32>());
+
             for gene in candidate_genes.iter_mut() {
                 let range = gene.bounds.1 - gene.bounds.0;
                 let max_step = range * (current_temp / initial_temp).max(0.01) * bounds_scale;
                 
-                // Cauchy perturbation: tan(pi * (u - 0.5))
-                let u = rand::random::<f64>() - 0.5;
-                let cauchy_multiplier = (std::f64::consts::PI * u).tan();
+                // Native Black Swan Engine (Zipf distribution)
+                let zipf_val = rng_state.next_zipf(&tweak) as f64;
+                let sign = if rand::random::<bool>() { 1.0 } else { -1.0 };
+                let zipf_multiplier = zipf_val * sign;
                 
-                // If the multiplier is extreme (e.g. > 10.0), this is a Black Swan event!
-                if cauchy_multiplier.abs() > 10.0 {
+                // If the zipf value is capped at 10000.0, this is a massive Black Swan event!
+                if zipf_val >= 9999.0 {
                     is_black_swan = true;
                 }
 
                 // Clamp the step to avoid extreme overflows destroying the parameters instantly
-                let step = (cauchy_multiplier * max_step).clamp(-range, range);
+                let step = (zipf_multiplier * max_step * 0.001).clamp(-range, range);
                 
                 gene.current_value =
                     (gene.current_value + step).clamp(gene.bounds.0, gene.bounds.1);

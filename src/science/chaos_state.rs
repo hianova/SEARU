@@ -1,5 +1,25 @@
 //! ChaosState Engine
 //! A neuro-symbolic pure static math engine for simulating state transitions.
+use serde::{Deserialize, Serialize};
+
+/// 混沌持久化狀態 (Native Chaos Persistence Engram)
+/// 取代過往神經網路權重，儲存「能重新產生極佳解的混沌種子」。
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ChaosEngram {
+    pub seed: u64,
+    pub energy_level: f64,
+    pub fitness: f64,
+}
+
+impl Default for ChaosEngram {
+    fn default() -> Self {
+        Self {
+            seed: 0xDEADBEEF,
+            energy_level: 1.0,
+            fitness: 0.0,
+        }
+    }
+}
 
 /// Lightweight, zero-allocation Xorshift32 PRNG.
 pub struct RngState {

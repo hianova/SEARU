@@ -1,4 +1,4 @@
-use crate::science::canvas::ChaosState;
+use crate::science::chaos_state::ChaosEngram;
 use std::fs;
 use std::sync::{Mutex, OnceLock};
 
@@ -10,7 +10,7 @@ pub enum DomainContext {
 }
 
 pub struct ExperienceOracle {
-    pub state: ChaosState,
+    pub state: ChaosEngram,
     pub stagnation_counter: usize,
     pub genome_dimension: usize,
 }
@@ -26,7 +26,7 @@ pub fn get_oracle() -> &'static Mutex<ExperienceOracle> {
             }
             Err(_) => {
                 println!("📦 [Chaos Cache] Initialized new state (no cache file found).");
-                ChaosState::default()
+                ChaosEngram::default()
             }
         };
 

@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 mod album;
 mod api;
 mod architecture;
@@ -118,35 +117,41 @@ async fn fallback() -> impl IntoResponse {
     )
 }
 
+use crate::science::crucible::{TheCrucible, Gene};
+
 #[derive(Serialize)]
 pub struct MultidomainResponse {
-    pub final_score: u32,
+    pub final_score: f64,
     pub genes: [f64; 9],
 }
 
 async fn api_science_multidomain_fuzz() -> impl IntoResponse {
-    let objective = crate::science::multidomain_fuzz::MultiDomainFuzzObjective::new(25.0, 100.0, 0.5);
-    let config = crate::science::assembly_funnel::FunnelConfig {
-        tier1_population: 1000,
-        tier2_retention_ratio: 0.1,
-        tier3_dfs_depth: 2,
-        stagnation_patience: 10,
-        stagnation_delta: 0.5,
-        rng_seed: 42,
-        min_slope_window: 0,
-        min_slope_threshold: 0.0,
-        hard_limit_gen: 500,
-        hard_limit_score: 0,
-        use_diffusion: true,
-    };
+    let mut genes = vec![
+        Gene { name: "enstrophy".into(), bounds: (0.0, 10.0), current_value: 0.5 },
+        Gene { name: "pressure_gradient".into(), bounds: (0.0, 10.0), current_value: 0.5 },
+        Gene { name: "viscosity".into(), bounds: (0.1, 50.0), current_value: 1.0 },
+        Gene { name: "local_strain".into(), bounds: (0.0, 50.0), current_value: 0.5 },
+        Gene { name: "stiffness".into(), bounds: (10.0, 500.0), current_value: 100.0 },
+        Gene { name: "damping".into(), bounds: (1.0, 50.0), current_value: 10.0 },
+        Gene { name: "freq".into(), bounds: (0.1, 20.0), current_value: 1.0 },
+        Gene { name: "radius".into(), bounds: (1.0, 50.0), current_value: 5.0 },
+        Gene { name: "power".into(), bounds: (1.0, 100.0), current_value: 10.0 },
+    ];
     
-    let (result, best_candidate) = crate::science::chaos_runner::ChaosRunner::launch_tunable(objective, config, "Multi-Domain Co-evolution");
+    let (final_score, best_genes) = TheCrucible::anneal(
+        genes,
+        |g| crate::science::multidomain_fuzz::evaluate_multidomain(g, 25.0, 100.0, 0.5),
+        500
+    );
     
-    let best_genes = best_candidate.unwrap_or([0.0; 9]);
+    let mut best_array = [0.0; 9];
+    for i in 0..9 {
+        best_array[i] = best_genes[i].current_value;
+    }
     
     Json(MultidomainResponse {
-        final_score: result.best_score(),
-        genes: best_genes,
+        final_score,
+        genes: best_array,
     })
 }
 

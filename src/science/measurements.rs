@@ -1,4 +1,5 @@
-use crate::science::canvas::{ChaosState, TopologyCanvas};
+use crate::science::canvas::TopologyCanvas;
+use crate::science::chaos_state::ChaosEngram;
 use std::time::Instant;
 
 pub struct AcademicBenchmarkReport {
@@ -14,7 +15,7 @@ pub fn run_chaos_benchmark(iterations: usize, canvas_size: usize) -> AcademicBen
     println!("   -> Canvas Size: {} bits", canvas_size);
 
     let mut canvas = TopologyCanvas::new(canvas_size, 1);
-    let chaos_state = ChaosState {
+    let chaos_state = ChaosEngram {
         seed: 0x9E3779B97F4A7C15, // Golden ratio prime seed
         energy_level: 0.5,        // 50% threshold for max entropy
         fitness: 1.0,
