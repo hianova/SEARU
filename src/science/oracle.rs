@@ -1,4 +1,5 @@
-use crate::science::enlighten_engine::EnlightenEngineFast;
+use crate::science::canvas::ChaosState;
+use std::fs;
 use std::sync::{Mutex, OnceLock};
 
 #[derive(Clone, Copy, Debug)]
@@ -8,33 +9,8 @@ pub enum DomainContext {
     Mechanics { degrees_of_freedom: f64 },
 }
 
-impl DomainContext {
-    /// Maps specific domain features into a shared 8-dimensional INT8 Latent Space.
-    pub fn to_latent_vector(&self) -> [i8; 8] {
-        let mut vec = [0i8; 8];
-        match self {
-            DomainContext::Music { tension, density } => {
-                vec[0] = 1; // Domain ID
-                vec[1] = (tension * 10.0) as i8;
-                vec[2] = (density * 10.0) as i8;
-            }
-            DomainContext::Architecture { height, stress } => {
-                vec[0] = 2; // Domain ID
-                vec[3] = (height * 10.0) as i8;
-                vec[4] = (stress * 10.0) as i8;
-            }
-            DomainContext::Mechanics { degrees_of_freedom } => {
-                vec[0] = 3; // Domain ID
-                vec[3] = (degrees_of_freedom.clamp(1.0, 10.0)) as i8;
-            }
-        }
-        vec[7] = vec[7].saturating_add(1); // Global bias token (using saturating add to avoid overflow)
-        vec
-    }
-}
-
 pub struct ExperienceOracle {
-    pub engine: EnlightenEngineFast,
+    pub state: ChaosState,
     pub stagnation_counter: usize,
     pub genome_dimension: usize,
 }
@@ -43,14 +19,19 @@ static ORACLE_INSTANCE: OnceLock<Mutex<ExperienceOracle>> = OnceLock::new();
 
 pub fn get_oracle() -> &'static Mutex<ExperienceOracle> {
     ORACLE_INSTANCE.get_or_init(|| {
-        let mut engine = EnlightenEngineFast::new(&[8, 128, 2]);
-        if let Ok(_) = engine.load("searu.engram") {
-            println!("📦 [Engine Cache] Loaded state from 'searu.engram'");
-        } else {
-            println!("📦 [Engine Cache] Initialized new state (no cache file found).");
-        }
+        let state = match fs::read_to_string("searu_chaos.engram") {
+            Ok(json) => {
+                println!("📦 [Chaos Cache] Loaded state from 'searu_chaos.engram'");
+                serde_json::from_str(&json).unwrap_or_default()
+            }
+            Err(_) => {
+                println!("📦 [Chaos Cache] Initialized new state (no cache file found).");
+                ChaosState::default()
+            }
+        };
+
         Mutex::new(ExperienceOracle {
-            engine,
+            state,
             stagnation_counter: 0,
             genome_dimension: 10,
         })
@@ -58,70 +39,63 @@ pub fn get_oracle() -> &'static Mutex<ExperienceOracle> {
 }
 
 impl ExperienceOracle {
-    /// Queries the internal network to predict the starting prior distribution
-    pub fn predict_prior(&mut self, context: DomainContext) -> (f64, f64) {
-        println!("⚙️ [Tuning Engine] Calculating optimization hyperparameters...");
+    /// Queries the internal chaos state to predict the starting prior distribution
+    pub fn predict_prior(&mut self, _context: DomainContext) -> (f64, f64) {
+        println!("⚙️ [Tuning Engine] Rehydrating from Chaos State...");
 
-        let mut sequence = vec![];
-        let latent_vector = context.to_latent_vector();
-        sequence.push(latent_vector.to_vec());
+        // Use the saved energy level from ChaosState to influence the starting temperature
+        let prior_temp = (self.state.energy_level * 100.0).clamp(10.0, 100.0);
+        let bounds_scale = 1.0 + (self.state.fitness * 0.5);
 
-        // Run continuous-time forward pass
-        let output_seq = self.engine.forward_sequence(&sequence, 0.1);
-        let final_out = &output_seq[0];
-
-        let logit_0 = final_out[0].abs() as f64;
-        let logit_1 = final_out[1].abs() as f64;
-
-        // Decode logits to SEARU Hyperparameters
-        let prior_temp = (100.0 - (logit_0 % 50.0)).max(10.0);
-        let bounds_scale = 1.0 + ((logit_1 % 10.0) * 0.1);
-
-        println!("   -> Initial Temperature: {:.2}°", prior_temp);
-        println!("   -> Bounds Scale Factor: {:.2}x", bounds_scale);
+        println!("   -> Rehydrated Initial Temperature: {:.2}°", prior_temp);
+        println!("   -> Rehydrated Bounds Scale Factor: {:.2}x", bounds_scale);
 
         (prior_temp, bounds_scale)
     }
 
     /// Feedback loop: Called after annealing finishes a run.
-    pub fn learn(&mut self, fitness: f64, is_epiphany: bool) {
+    /// Now, it directly saves the ChaosState rather than tweaking neural net weights.
+    pub fn learn_chaos(&mut self, fitness: f64, is_epiphany: bool, final_temp: f64, seed: u64) {
         if is_epiphany {
             self.stagnation_counter = 0;
-            println!("💾 [Engine Cache] Optimal score threshold reached. Saving model weights.");
-            if let Err(e) = self.engine.save("searu.engram") {
-                eprintln!("💾 [Engine Cache] Failed to persist state: {}", e);
-            } else {
-                println!("💾 [Engine Cache] State persisted to 'searu.engram'");
+            self.state.fitness = fitness;
+            self.state.seed = seed;
+            self.state.energy_level = final_temp;
+
+            println!("💾 [Chaos Cache] Optimal score threshold reached. Saving Chaos State.");
+            
+            if let Ok(json) = serde_json::to_string_pretty(&self.state) {
+                if let Err(e) = fs::write("searu_chaos.engram", json) {
+                    eprintln!("💾 [Chaos Cache] Failed to persist state: {}", e);
+                } else {
+                    println!("💾 [Chaos Cache] State persisted to 'searu_chaos.engram'");
+                }
             }
         } else {
             self.stagnation_counter += 1;
-            
             if self.stagnation_counter >= 10 {
                 self.trigger_paradigm_shift();
                 return;
             }
-
-            // If the run stagnated, adjust weight mutation rate
-            let error = (1.0 - fitness).max(0.01);
-            let mutation_rate = (error * 0.05) as f32; // max 5% bit flip rate
-
             println!(
-                "🔄 [Adaptive Engine] Score {:.4} -> Adjusting exploration rate ({:.4})",
-                fitness, mutation_rate
+                "🔄 [Adaptive Engine] Score {:.4} -> Stagnation {}/10",
+                fitness, self.stagnation_counter
             );
-            self.engine.mutate(mutation_rate);
         }
     }
 
     pub fn trigger_paradigm_shift(&mut self) {
         self.stagnation_counter = 0;
         self.genome_dimension += 1;
+        
+        // Reset the seed to induce a massive chaos shift
+        self.state.seed ^= 0xCAFEBABE;
+        self.state.energy_level = 1.0;
+
         println!("\n=======================================================");
         println!("📈 [Dynamic Scaling] Optimization stagnation detected.");
         println!("📈 Expanding search space dimensions to {}D", self.genome_dimension);
+        println!("📈 Paradigm Shift Triggered: Chaos Seed Re-randomized!");
         println!("=======================================================\n");
-        
-        // Reset weight exploration in new dimension
-        self.engine.mutate(0.5);
     }
 }

@@ -172,11 +172,12 @@ impl TheCrucible {
             }
         }
 
-        // Feedback Loop: Send the best results back to ENLIGHTEN to evolve the Neural Network
+        // Feedback Loop: Send the best results back to Oracle to persist the Chaos State
         let is_epiphany = best_sublime > 0.8 && best_fitness > 0.8;
         {
             let mut oracle = crate::science::oracle::get_oracle().lock().unwrap();
-            oracle.learn(best_fitness, is_epiphany);
+            let seed = rand::random::<u64>(); // Capture the random seed that led to this epiphany
+            oracle.learn_chaos(best_fitness, is_epiphany, final_temp, seed);
         }
 
         (best_fitness, best_sublime, best_genes)

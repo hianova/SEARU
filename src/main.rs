@@ -40,6 +40,12 @@ async fn main() {
     println!("🚀 Starting SEARU Generative Design Suite on http://localhost:3000");
     println!("📜 [System Engine] Runtime Parameters Initialized:");
 
+    let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|a| a == "--benchmark") {
+        crate::science::measurements::run_chaos_benchmark(1_000_000, 262144); // 256K bits = 32KB canvas
+        return;
+    }
+
     tokio::spawn(autonomous_pulse());
 
     // Initialize telemetry channel (capacity 1000)
@@ -81,10 +87,12 @@ async fn shutdown_signal() {
     println!("⚠️  [Shutdown] Received Ctrl-C, forcing graceful shutdown...");
     let oracle = crate::science::oracle::get_oracle();
     if let Ok(o) = oracle.lock() {
-        if let Err(e) = o.engine.save("searu.engram") {
-            println!("❌ Failed to flush searu.engram: {}", e);
-        } else {
-            println!("💾 Oracle memories successfully flushed to searu.engram");
+        if let Ok(json) = serde_json::to_string_pretty(&o.state) {
+            if let Err(e) = std::fs::write("searu_chaos.engram", json) {
+                println!("❌ Failed to flush searu_chaos.engram: {}", e);
+            } else {
+                println!("💾 Chaos Canvas memories successfully flushed to searu_chaos.engram");
+            }
         }
     }
 }

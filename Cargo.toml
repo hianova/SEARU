@@ -17,14 +17,12 @@ rayon = "1.12.0"
 midly = "0.5.3"
 tokio-stream = { version = "0.1.19", features = ["sync"] }
 futures = "0.3.34"
-vec101 = { path = "src/vec101" }
 covopt-macro = { path = "../covopt-analyzer/covopt-macro" }
 script_go = { path = "src/ScriptGo" }
 
 [workspace]
 members = [
     ".",
-    "src/vec101",
     "src/no_std_tool",
     "src/ScriptGo"
 ]
