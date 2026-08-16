@@ -24,22 +24,7 @@ pub struct Gene {
 pub struct TheCrucible;
 
 impl TheCrucible {
-    fn compute_novelty(history: &[Vec<Gene>], candidate: &[Gene]) -> f64 {
-        if history.is_empty() {
-            return 0.0;
-        }
-        let mut total_distance = 0.0;
-        for hist_state in history {
-            let mut dist_sq = 0.0;
-            for (g1, g2) in hist_state.iter().zip(candidate.iter()) {
-                let range = (g1.bounds.1 - g1.bounds.0).max(1e-6);
-                let norm_diff = (g1.current_value - g2.current_value) / range;
-                dist_sq += norm_diff.powi(2);
-            }
-            total_distance += dist_sq.sqrt();
-        }
-        total_distance / history.len() as f64
-    }
+    // compute_novelty is removed! We rely purely on the fat-tail of chaos (Lévy Flight).
 
     pub fn anneal<F>(genes: Vec<Gene>, mut evaluate: F, iterations: usize) -> (f64, Vec<Gene>)
     where
@@ -87,17 +72,27 @@ impl TheCrucible {
         let mut current_temp = initial_temp;
         let tx = TELEMETRY_TX.get();
 
-        let mut history: Vec<Vec<Gene>> = Vec::new();
-        history.push(genes.clone());
-
         for i in 0..iterations {
             let mut candidate_genes = genes.clone();
 
-            // Perturb genes
+            // Perturb genes using Cauchy Distribution (Lévy Flight / Fat-Tail)
+            let mut is_black_swan = false;
             for gene in candidate_genes.iter_mut() {
                 let range = gene.bounds.1 - gene.bounds.0;
-                let max_step = range * (current_temp / initial_temp).max(0.05) * bounds_scale;
-                let step = (rand::random::<f64>() - 0.5) * max_step;
+                let max_step = range * (current_temp / initial_temp).max(0.01) * bounds_scale;
+                
+                // Cauchy perturbation: tan(pi * (u - 0.5))
+                let u = rand::random::<f64>() - 0.5;
+                let cauchy_multiplier = (std::f64::consts::PI * u).tan();
+                
+                // If the multiplier is extreme (e.g. > 10.0), this is a Black Swan event!
+                if cauchy_multiplier.abs() > 10.0 {
+                    is_black_swan = true;
+                }
+
+                // Clamp the step to avoid extreme overflows destroying the parameters instantly
+                let step = (cauchy_multiplier * max_step).clamp(-range, range);
+                
                 gene.current_value =
                     (gene.current_value + step).clamp(gene.bounds.0, gene.bounds.1);
             }
@@ -106,24 +101,15 @@ impl TheCrucible {
             let mut is_epiphany = false;
             let mut accepted = false;
 
-            // 1. Check for exploration breakthrough (High novelty & harmony)
-            if candidate_fitness > current_fitness {
-                let novelty = Self::compute_novelty(&history, &candidate_genes);
-                let novelty_threshold = 0.3;
-                let sublime_threshold = 0.8;
+            // 1. Check for exploration breakthrough (Black Swan + High Harmony)
+            if candidate_fitness > current_fitness && is_black_swan && candidate_sublime > 0.8 {
+                is_epiphany = true;
+                // Re-heat temperature to explore new region!
+                current_temp = (current_temp * 5.0).min(initial_temp);
 
-                if novelty > novelty_threshold
-                    && candidate_sublime > sublime_threshold
-                    && rand::random::<f64>() < 0.10
-                {
-                    is_epiphany = true;
-                    // Re-heat temperature to explore new region!
-                    current_temp = (current_temp * 5.0).min(initial_temp);
-
-                    genes = candidate_genes.clone();
-                    current_fitness = candidate_fitness;
-                    accepted = true;
-                }
+                genes = candidate_genes.clone();
+                current_fitness = candidate_fitness;
+                accepted = true;
             }
 
             // 2. Standard Acceptance
@@ -150,12 +136,7 @@ impl TheCrucible {
                 }
             }
 
-            if accepted {
-                history.push(genes.clone());
-                if history.len() > 10 {
-                    history.remove(0);
-                } // Keep context window size at 10
-            }
+            // No history buffer tracking needed anymore!
 
             current_temp *= cooling_rate;
 
